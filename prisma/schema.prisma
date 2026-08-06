@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ConversationStatus {
+  OPEN
+  WAITING_HUMAN
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  UNKNOWN
+  SYSTEM
+}
+
+enum MessageStatus {
+  RECEIVED
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  QUEUED
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+enum HandoffStatus {
+  OPEN
+  ACCEPTED
+  CLOSED
+}
+
+enum AiRunStatus {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+enum ToolExecutionStatus {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+model Contact {
+  id           String         @id @default(uuid())
+  externalId   String         @unique @map("external_id")
+  name         String?
+  phoneNumber  String         @map("phone_number")
+  conversations Conversation[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@index([phoneNumber], map: "idx_alc_contacts_phone_number")
+  @@map("alc_contacts")
+}
+
+model Conversation {
+  id         String             @id @default(uuid())
+  contactId  String             @map("contact_id")
+  status     ConversationStatus @default(OPEN)
+  locale     String             @default("es-MX")
+  contact    Contact            @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  messages   Message[]
+  aiRuns     AiRun[]
+  handoffs   Handoff[]
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  @@index([contactId, status], map: "idx_alc_conversations_contact_status")
+  @@map("alc_conversations")
+}
+
+model Message {
+  id                String           @id @default(uuid())
+  conversationId    String           @map("conversation_id")
+  direction         MessageDirection
+  type              MessageType
+  providerMessageId String?          @map("provider_message_id")
+  text              String?
+  status            MessageStatus
+  metadata          Json
+  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  @@index([conversationId, createdAt], map: "idx_alc_messages_conversation_created_at")
+  @@index([providerMessageId], map: "idx_alc_messages_provider_message_id")
+  @@map("alc_messages")
+}
+
+model WebhookEvent {
+  id         String        @id @default(uuid())
+  externalId String        @unique @map("external_id")
+  provider   String
+  eventType  String        @map("event_type")
+  status     WebhookStatus
+  payload    Json
+  headers    Json
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@index([provider, createdAt], map: "idx_alc_webhook_events_provider_created_at")
+  @@map("alc_webhook_events")
+}
+
+model AiRun {
+  id                 String      @id @default(uuid())
+  conversationId     String      @map("conversation_id")
+  provider           String
+  model              String
+  providerResponseId String?     @map("provider_response_id")
+  status             AiRunStatus
+  inputTokens        Int?        @map("input_tokens")
+  outputTokens       Int?        @map("output_tokens")
+  totalTokens        Int?        @map("total_tokens")
+  error              String?
+  conversation       Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  toolExecutions     ToolExecution[]
+  createdAt          DateTime    @default(now()) @map("created_at")
+  completedAt        DateTime?   @map("completed_at")
+
+  @@index([conversationId, createdAt], map: "idx_alc_ai_runs_conversation_created_at")
+  @@map("alc_ai_runs")
+}
+
+model ToolExecution {
+  id          String              @id @default(uuid())
+  aiRunId     String              @map("ai_run_id")
+  toolName    String              @map("tool_name")
+  input       Json
+  output      Json?
+  status      ToolExecutionStatus
+  error       String?
+  aiRun       AiRun               @relation(fields: [aiRunId], references: [id], onDelete: Restrict)
+  createdAt   DateTime            @default(now()) @map("created_at")
+  completedAt DateTime?           @map("completed_at")
+
+  @@index([aiRunId, createdAt], map: "idx_alc_tool_executions_ai_run_created_at")
+  @@map("alc_tool_executions")
+}
+
+model Handoff {
+  id              String        @id @default(uuid())
+  conversationId  String        @map("conversation_id")
+  status          HandoffStatus
+  reason          String?
+  assignedAgentId String?       @map("assigned_agent_id")
+  requestedAt     DateTime      @map("requested_at")
+  acceptedAt      DateTime?     @map("accepted_at")
+  closedAt        DateTime?     @map("closed_at")
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([conversationId, status], map: "idx_alc_handoffs_conversation_status")
+  @@map("alc_handoffs")
+}

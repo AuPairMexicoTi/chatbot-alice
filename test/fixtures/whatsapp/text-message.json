@@ -1,0 +1,32 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "contacts": [
+              {
+                "wa_id": "5215550000001",
+                "profile": {
+                  "name": "Cliente Demo"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "id": "wamid.TEST-123",
+                "from": "5215550000001",
+                "type": "text",
+                "text": {
+                  "body": "Hola ALICE"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
