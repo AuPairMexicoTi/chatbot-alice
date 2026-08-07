@@ -1,11 +1,11 @@
-Las instrucciones canónicas del repositorio se encuentran en `AGENTS.md`.
-Antes de modificar el proyecto, lee y respeta `AGENTS.md`.
+The canonical repository instructions are in `AGENTS.md`.
+Before modifying the project, read and follow `AGENTS.md`.
 
-Resumen:
+Summary:
 
-- Proyecto: backend NestJS de ALICE.
+- Project: ALICE NestJS backend.
 - Stack: NestJS, TypeScript, pnpm, Prisma, PostgreSQL, Redis, BullMQ.
-- Validación: `pnpm check`.
-- No usar `npm` ni `npx`.
-- Arquitectura hexagonal.
-- No agregar secretos.
+- Validation: `pnpm check`.
+- Do not use `npm` or `npx`.
+- Hexagonal architecture.
+- Do not add secrets.

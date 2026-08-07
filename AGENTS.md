@@ -1,40 +1,40 @@
 # AGENTS.md
 
-## Resumen
+## Summary
 
-`chatbot-alice` es el backend NestJS de ALICE, integrado con WhatsApp, OpenAI, PostgreSQL, Redis y BullMQ bajo arquitectura hexagonal.
+`chatbot-alice` is ALICE's NestJS backend, integrated with WhatsApp, OpenAI, PostgreSQL, Redis, and BullMQ under a hexagonal architecture.
 
 ## Stack
 
 - NestJS
-- TypeScript estricto
+- Strict TypeScript
 - pnpm
 - Prisma + PostgreSQL
 - Redis + BullMQ
 - OpenAI Responses API
 - Jest
 
-## Reglas
+## Rules
 
-- Usa solo `pnpm`.
-- No uses `npm` ni `npx`.
-- No agregues secretos.
-- La IA no accede directo a DB.
-- Usa Responses API, no Chat Completions.
-- En pruebas usa proveedores mock.
-- Respeta el prefijo `alc_` en tablas.
-- No agregues microservicios ni n8n sin decisión arquitectónica explícita.
-- No uses `any`.
-- No ignores errores de TypeScript o ESLint.
-- No modifiques migraciones aplicadas.
+- Use `pnpm` only.
+- Do not use `npm` or `npx`.
+- Do not add secrets.
+- AI must not access the DB directly.
+- Use the Responses API, not Chat Completions.
+- Use mock providers in tests.
+- Respect the `alc_` table prefix.
+- Do not add microservices or n8n without an explicit architectural decision.
+- Do not use `any`.
+- Do not ignore TypeScript or ESLint errors.
+- Do not modify applied migrations.
 
-## Arquitectura
+## Architecture
 
-- Capas: `presentation -> application -> domain`
+- Layers: `presentation -> application -> domain`
 - `infrastructure -> application/domain`
-- `domain` no importa NestJS, Prisma, Redis, BullMQ ni SDKs externos.
+- `domain` must not import NestJS, Prisma, Redis, BullMQ, or external SDKs.
 
-## Comandos
+## Commands
 
 - `pnpm prisma:generate`
 - `pnpm lint:check`
@@ -43,22 +43,22 @@
 - `pnpm build`
 - `pnpm check`
 
-## Migraciones y docs
+## Migrations and docs
 
-- Genera migraciones nuevas; no reescribas las ya aplicadas.
-- Actualiza README y docs cuando cambie configuración o arquitectura.
+- Create new migrations; do not rewrite applied ones.
+- Update README and docs when configuration or architecture changes.
 
-## Pruebas
+## Testing
 
-- Ejecuta `pnpm check`.
-- Reporta claramente cualquier prueba no ejecutada o bloqueo real.
+- Run `pnpm check`.
+- Clearly report any tests that were not executed or any real blocker.
 
 ## Definition of Done
 
-- El código compila.
-- ESLint pasa.
-- TypeScript pasa.
-- Las pruebas pasan.
-- No se agregaron secretos.
-- Las capas respetan sus dependencias.
-- La documentación fue actualizada.
+- The code compiles.
+- ESLint passes.
+- TypeScript passes.
+- Tests pass.
+- No secrets were added.
+- Layer dependencies are respected.
+- Documentation was updated.

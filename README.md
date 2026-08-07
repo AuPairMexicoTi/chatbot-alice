@@ -1,20 +1,20 @@
 # chatbot-alice
 
-ALICE significa `Artificial Labile Intelligence Cybernetic Existence`.
+ALICE stands for `Artificial Labile Intelligence Cybernetic Existence`.
 
-Backend NestJS para un chatbot empresarial orientado a WhatsApp Business Cloud API, con arquitectura hexagonal, colas asíncronas, PostgreSQL, Prisma y proveedores mock para desarrollo local.
+NestJS backend for an enterprise chatbot connected to the WhatsApp Business Cloud API, using hexagonal architecture, asynchronous queues, PostgreSQL, Prisma, and mock providers for local development.
 
-## Estado actual
+## Current status
 
-Base funcional inicial del monolito modular. El arranque local usa proveedores mock de IA y WhatsApp por defecto.
+Initial functional foundation of the modular monolith. Local startup uses mock AI and WhatsApp providers by default.
 
-## Requisitos
+## Requirements
 
 - Node.js 22
 - pnpm 11
 - Docker
 
-## Comandos principales
+## Main commands
 
 ```bash
 pnpm install
@@ -24,13 +24,13 @@ pnpm db:migrate --name initial_schema
 pnpm start:dev
 ```
 
-Validación completa:
+Full validation:
 
 ```bash
 pnpm check
 ```
 
-## Endpoints iniciales
+## Initial endpoints
 
 - `http://localhost:3000/api/v1`
 - `http://localhost:3000/docs`
@@ -39,43 +39,43 @@ pnpm check
 - `GET /api/v1/webhooks/whatsapp`
 - `POST /api/v1/webhooks/whatsapp`
 
-## Variables de entorno
+## Environment variables
 
-Archivos versionados:
+Versioned files:
 
 - `.env.example`
 - `.env.test`
 - `.env.production.example`
 
-Para desarrollo local existe `.env` con proveedores mock. No se requiere API key real de OpenAI ni credenciales reales de Meta para levantar la aplicación.
+For local development, `.env` is provided with mock providers. No real OpenAI API key or real Meta credentials are required to start the application.
 
-## Arquitectura
+## Architecture
 
-- Monolito modular.
-- Capas por módulo: `domain`, `application`, `infrastructure`, `presentation`.
-- El dominio no depende de NestJS, Prisma, Redis, BullMQ ni SDKs externos.
-- La IA no accede directamente a la base de datos.
-- El flujo de webhook persiste primero y responde rápido; el trabajo pesado va a cola.
+- Modular monolith.
+- Per-module layers: `domain`, `application`, `infrastructure`, `presentation`.
+- The domain does not depend on NestJS, Prisma, Redis, BullMQ, or external SDKs.
+- AI does not access the database directly.
+- The webhook flow persists first and responds quickly; heavy work is sent to queues.
 
-Flujo resumido:
+Summary flow:
 
 ```text
-Webhook HTTP
-  -> verificación/firma
-  -> persistencia de evento
-  -> cola inbound
-  -> procesamiento
-  -> mensaje inbound
-  -> IA
-  -> mensaje outbound
-  -> cola outbound
+HTTP Webhook
+  -> verification/signature
+  -> event persistence
+  -> inbound queue
+  -> processing
+  -> inbound message
+  -> AI
+  -> outbound message
+  -> outbound queue
   -> WhatsApp
 ```
 
 ## Stack
 
 - NestJS
-- TypeScript estricto
+- Strict TypeScript
 - pnpm
 - Prisma + PostgreSQL
 - Redis + BullMQ
@@ -85,44 +85,44 @@ Webhook HTTP
 - Jest
 - Docker
 
-## Convenciones
+## Conventions
 
-- Prefijo de tablas: `alc_`
-- Package manager único: `pnpm`
-- No usar `npm` ni `npx`
-- No agregar secretos al repositorio
-- Convención de commits:
+- Table prefix: `alc_`
+- Single package manager: `pnpm`
+- Do not use `npm` or `npx`
+- Do not add secrets to the repository
+- Commit convention:
 
 ```text
-[TYPE] modulo - Descripción breve
+[TYPE] module - Short description
 
-Motivo:
-Explicación del motivo.
+Reason:
+Explain the reason.
 
-Cambios:
-- Cambio uno.
-- Cambio dos.
+Changes:
+- Change one.
+- Change two.
 ```
 
-Tipos sugeridos: `INIT`, `ADD`, `UPDATE`, `FIX`, `REFACTOR`, `DOCS`, `TEST`, `CHORE`.
+Suggested types: `INIT`, `ADD`, `UPDATE`, `FIX`, `REFACTOR`, `DOCS`, `TEST`, `CHORE`.
 
-## Seguridad
+## Security
 
 - Helmet
-- CORS por allowlist
-- Rate limiting global
-- Redacción de secretos en logs
-- Firma HMAC opcional de webhook
-- Idempotencia de webhook
-- Procesamiento asíncrono
+- Allowlist-based CORS
+- Global rate limiting
+- Secret redaction in logs
+- Optional webhook HMAC signature
+- Webhook idempotency
+- Asynchronous processing
 
 ## Troubleshooting
 
-- Si `pnpm` bloquea scripts, aprueba únicamente los paquetes necesarios.
-- Si Docker no está disponible, ejecuta al menos `pnpm prisma:generate`.
-- Si faltan Postgres o Redis, `health/ready` responderá error.
+- If `pnpm` blocks scripts, approve only the packages that are actually required.
+- If Docker is not available, run at least `pnpm prisma:generate`.
+- If Postgres or Redis are missing, `health/ready` will return an error.
 
-## Documentación adicional
+## Additional documentation
 
 - `docs/architecture.md`
 - `docs/adr/`
