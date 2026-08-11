@@ -6,6 +6,7 @@ import { DatabaseHealthService } from './infrastructure/database-health.service'
 import { RedisHealthService } from './infrastructure/redis-health.service';
 import { TestHealthService } from './infrastructure/test-health.service';
 import { HealthController } from './presentation/health.controller';
+import { RedisService } from '@shared/infrastructure/redis/redis.service';
 
 @Module({
   controllers: [HealthController],
@@ -35,6 +36,7 @@ import { HealthController } from './presentation/health.controller';
     },
     DatabaseHealthService,
     RedisHealthService,
+    RedisService,
   ],
 })
 export class HealthModule {}

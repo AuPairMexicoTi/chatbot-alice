@@ -53,8 +53,6 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     InMemoryWebhookEventRepository,
     InMemoryAiRunRepository,
     InMemoryHandoffRepository,
-    MockAiGateway,
-    OpenAiResponsesGateway,
     MockWhatsAppGateway,
     MetaWhatsAppGateway,
     InMemoryQueueAdapter,
@@ -94,15 +92,11 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     },
     {
       provide: AI_GATEWAY_TOKEN,
-      inject: [ConfigService, MockAiGateway, OpenAiResponsesGateway],
-      useFactory: (
-        configService: ConfigService,
-        mockAiGateway: MockAiGateway,
-        openAiResponsesGateway: OpenAiResponsesGateway,
-      ) =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         configService.get<string>('ai.provider') === 'openai'
-          ? openAiResponsesGateway
-          : mockAiGateway,
+          ? new OpenAiResponsesGateway(configService)
+          : new MockAiGateway(),
     },
     {
       provide: WHATSAPP_GATEWAY,

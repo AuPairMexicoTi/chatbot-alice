@@ -2,6 +2,7 @@
 /dist
 /build
 /coverage
+/src/generated/prisma
 
 # dependencies
 /node_modules
