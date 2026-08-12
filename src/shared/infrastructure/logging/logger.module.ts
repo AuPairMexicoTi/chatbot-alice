@@ -29,6 +29,7 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
                 'WHATSAPP_ACCESS_TOKEN',
                 'WHATSAPP_APP_SECRET',
                 'OPENAI_API_KEY',
+                'GEMINI_API_KEY',
                 'DATABASE_URL',
               ],
               remove: true,

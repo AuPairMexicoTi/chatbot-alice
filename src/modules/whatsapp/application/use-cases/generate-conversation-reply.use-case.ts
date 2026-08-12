@@ -36,8 +36,8 @@ export class GenerateConversationReplyUseCase {
 
     const pendingRun = await this.aiRunRepository.createPending(
       conversationId,
-      'pending',
-      'pending',
+      this.aiGateway.provider,
+      this.aiGateway.model,
     );
 
     try {

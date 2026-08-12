@@ -3,12 +3,17 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AI_RUN_REPOSITORY } from '@modules/ai/application/ports/ai-run.repository';
 import { CHATBOT_TOOLS as CHATBOT_TOOLS_TOKEN } from '@modules/ai/application/ports/chatbot-tool';
+import { AUTO_REPLY_REPOSITORY } from '@modules/auto-replies/application/ports/auto-reply.repository';
+import { ResolveAutoReplyUseCase } from '@modules/auto-replies/application/use-cases/resolve-auto-reply.use-case';
+import { InMemoryAutoReplyRepository } from '@modules/auto-replies/infrastructure/repositories/in-memory-auto-reply.repository';
+import { PrismaAutoReplyRepository } from '@modules/auto-replies/infrastructure/repositories/prisma-auto-reply.repository';
 import { CONTACT_REPOSITORY } from '@modules/contacts/application/ports/contact.repository';
 import { CONVERSATION_REPOSITORY } from '@modules/conversations/application/ports/conversation.repository';
 import { HANDOFF_REPOSITORY } from '@modules/handoff/application/ports/handoff.repository';
 import { RequestHumanHandoffTool } from '@modules/handoff/infrastructure/tools/request-human-handoff.tool';
 import { MESSAGE_REPOSITORY } from '@modules/messaging/application/ports/message.repository';
 import { AI_GATEWAY as AI_GATEWAY_TOKEN } from '@modules/ai/application/ports/ai-gateway';
+import { GeminiGateway } from '@modules/ai/infrastructure/adapters/gemini.gateway';
 import { MockAiGateway } from '@modules/ai/infrastructure/adapters/mock-ai.gateway';
 import { OpenAiResponsesGateway } from '@modules/ai/infrastructure/adapters/openai-responses.gateway';
 import { WEBHOOK_EVENT_REPOSITORY } from '@modules/webhooks/application/ports/webhook-event.repository';
@@ -37,6 +42,7 @@ import { InMemoryHandoffRepository } from '@modules/persistence/infrastructure/r
 import { InMemoryMessageRepository } from '@modules/persistence/infrastructure/repositories/in-memory-message.repository';
 import { InMemoryStore } from '@modules/persistence/infrastructure/repositories/in-memory.store';
 import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastructure/repositories/in-memory-webhook-event.repository';
+import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
 
 @Module({
   imports: [
@@ -60,12 +66,24 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     BullOutboundQueueAdapter,
     MetaWebhookVerifierService,
     WhatsAppWebhookParser,
+    ResolveAutoReplyUseCase,
     GenerateConversationReplyUseCase,
     ProcessInboundWhatsAppMessageUseCase,
     QueueOutboundMessageUseCase,
     SendOutboundWhatsAppMessageUseCase,
     RequestHumanHandoffUseCase,
     RequestHumanHandoffTool,
+    {
+      provide: AUTO_REPLY_REPOSITORY,
+      inject: [ConfigService, PrismaService],
+      useFactory: (
+        configService: ConfigService,
+        prismaService: PrismaService,
+      ) =>
+        configService.get<string>('app.nodeEnv') === 'test'
+          ? new InMemoryAutoReplyRepository()
+          : new PrismaAutoReplyRepository(prismaService),
+    },
     {
       provide: CONTACT_REPOSITORY,
       useExisting: InMemoryContactRepository,
@@ -93,10 +111,19 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     {
       provide: AI_GATEWAY_TOKEN,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) =>
-        configService.get<string>('ai.provider') === 'openai'
-          ? new OpenAiResponsesGateway(configService)
-          : new MockAiGateway(),
+      useFactory: (configService: ConfigService) => {
+        const provider = configService.getOrThrow<string>('ai.provider');
+
+        if (provider === 'openai') {
+          return new OpenAiResponsesGateway(configService);
+        }
+
+        if (provider === 'gemini') {
+          return new GeminiGateway(configService);
+        }
+
+        return new MockAiGateway();
+      },
     },
     {
       provide: WHATSAPP_GATEWAY,

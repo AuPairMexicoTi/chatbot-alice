@@ -2,7 +2,7 @@
 
 ALICE stands for `Artificial Labile Intelligence Cybernetic Existence`.
 
-NestJS backend for an enterprise chatbot connected to the WhatsApp Business Cloud API, using hexagonal architecture, asynchronous queues, PostgreSQL, Prisma, and mock providers for local development.
+NestJS backend for an enterprise chatbot connected to the WhatsApp Business Cloud API, using hexagonal architecture, asynchronous queues, PostgreSQL, Prisma, and pluggable AI providers for local development and production.
 
 ## Current status
 
@@ -47,7 +47,23 @@ Versioned files:
 - `.env.test`
 - `.env.production.example`
 
-For local development, `.env` is provided with mock providers. No real OpenAI API key or real Meta credentials are required to start the application.
+For local development, `.env` is provided with mock providers. No real OpenAI, Gemini, or Meta credentials are required to start the application.
+
+AI provider selection:
+
+- `AI_PROVIDER=mock|openai|gemini`
+- `AI_MODEL=<provider-model-name>`
+- `OPENAI_API_KEY` only when `AI_PROVIDER=openai`
+- `GEMINI_API_KEY` only when `AI_PROVIDER=gemini`
+
+## Deterministic replies
+
+Predetermined replies can be resolved before AI.
+
+- Entries live in `alc_auto_replies`
+- They can be edited with `pnpm db:studio`
+- Matching runs before `AiGateway`
+- If an active rule matches, ALICE replies without consuming AI tokens
 
 ## Architecture
 

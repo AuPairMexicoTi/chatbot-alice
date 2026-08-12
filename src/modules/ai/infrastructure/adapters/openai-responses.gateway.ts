@@ -11,10 +11,13 @@ import {
 @Injectable()
 export class OpenAiResponsesGateway implements AiGateway {
   private readonly client: OpenAI;
+  readonly provider = 'openai';
+  readonly model: string;
 
   constructor(private readonly configService: ConfigService) {
+    this.model = this.configService.getOrThrow<string>('ai.model');
     this.client = new OpenAI({
-      apiKey: this.configService.getOrThrow<string>('ai.apiKey'),
+      apiKey: this.configService.getOrThrow<string>('ai.openAiApiKey'),
     });
   }
 
@@ -28,7 +31,7 @@ export class OpenAiResponsesGateway implements AiGateway {
     try {
       const response = await this.client.responses.create(
         {
-          model: this.configService.getOrThrow<string>('ai.model'),
+          model: this.model,
           instructions: ALICE_SYSTEM_PROMPT,
           input: input.history
             .map((message) => `${message.direction}: ${message.text ?? ''}`)
@@ -43,8 +46,8 @@ export class OpenAiResponsesGateway implements AiGateway {
       return {
         text:
           response.output_text?.trim() || 'No se pudo generar una respuesta.',
-        provider: 'openai',
-        model: response.model,
+        provider: this.provider,
+        model: response.model || this.model,
         externalResponseId: response.id,
         usage: {
           inputTokens: response.usage?.input_tokens ?? null,

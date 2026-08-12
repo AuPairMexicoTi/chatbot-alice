@@ -54,18 +54,23 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.string().allow('').required(),
   }),
   WHATSAPP_VALIDATE_SIGNATURE: Joi.boolean().required(),
-  AI_PROVIDER: Joi.string().valid('mock', 'openai').required(),
+  AI_PROVIDER: Joi.string().valid('mock', 'openai', 'gemini').required(),
+  AI_MODEL: Joi.when('AI_PROVIDER', {
+    is: 'mock',
+    then: Joi.string().default('mock-alice'),
+    otherwise: Joi.string().required(),
+  }),
   OPENAI_API_KEY: Joi.when('AI_PROVIDER', {
     is: 'openai',
     then: Joi.string().required(),
     otherwise: Joi.string().allow('').required(),
   }),
-  OPENAI_MODEL: Joi.when('AI_PROVIDER', {
-    is: 'openai',
+  GEMINI_API_KEY: Joi.when('AI_PROVIDER', {
+    is: 'gemini',
     then: Joi.string().required(),
     otherwise: Joi.string().allow('').required(),
   }),
-  OPENAI_TIMEOUT_MS: Joi.number().min(1000).required(),
-  OPENAI_MAX_OUTPUT_TOKENS: Joi.number().min(1).required(),
-  OPENAI_STORE: Joi.boolean().required(),
+  AI_TIMEOUT_MS: Joi.number().min(1000).required(),
+  AI_MAX_OUTPUT_TOKENS: Joi.number().min(1).required(),
+  AI_STORE: Joi.boolean().required(),
 }).unknown(true);

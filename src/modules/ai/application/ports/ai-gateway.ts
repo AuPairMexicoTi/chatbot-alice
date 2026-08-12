@@ -29,6 +29,8 @@ export interface GenerateReplyResult {
 }
 
 export interface AiGateway {
+  readonly provider: string;
+  readonly model: string;
   generateReply(input: GenerateReplyInput): Promise<GenerateReplyResult>;
 }
 

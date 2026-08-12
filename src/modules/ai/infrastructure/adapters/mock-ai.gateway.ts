@@ -7,6 +7,9 @@ import {
 
 @Injectable()
 export class MockAiGateway implements AiGateway {
+  readonly provider = 'mock';
+  readonly model = 'mock-alice';
+
   async generateReply(input: GenerateReplyInput): Promise<GenerateReplyResult> {
     const lastMessage = [...input.history]
       .reverse()
@@ -14,8 +17,8 @@ export class MockAiGateway implements AiGateway {
 
     return {
       text: `ALICE recibió tu mensaje: ${lastMessage?.text ?? ''}`.trim(),
-      provider: 'mock',
-      model: 'mock-alice',
+      provider: this.provider,
+      model: this.model,
       externalResponseId: null,
       usage: {
         inputTokens: null,

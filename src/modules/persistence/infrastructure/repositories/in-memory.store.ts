@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { AiRun } from '@modules/ai/domain/ai-run.entity';
+import { AutoReply } from '@modules/auto-replies/domain/auto-reply.entity';
 import { Contact } from '@modules/contacts/domain/contact.entity';
 import { Conversation } from '@modules/conversations/domain/conversation.entity';
 import { Handoff } from '@modules/handoff/domain/handoff.entity';
@@ -15,6 +16,7 @@ export class InMemoryStore {
   readonly webhooks = new Map<string, WebhookEvent>();
   readonly aiRuns = new Map<string, AiRun>();
   readonly handoffs = new Map<string, Handoff>();
+  readonly autoReplies = new Map<string, AutoReply>();
 
   nextId(): string {
     return randomUUID();

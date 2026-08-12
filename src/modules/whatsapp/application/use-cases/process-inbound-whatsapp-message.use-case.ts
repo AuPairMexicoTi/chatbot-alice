@@ -11,6 +11,7 @@ import {
   MESSAGE_REPOSITORY,
   MessageRepository,
 } from '@modules/messaging/application/ports/message.repository';
+import { ResolveAutoReplyUseCase } from '@modules/auto-replies/application/use-cases/resolve-auto-reply.use-case';
 import { QueueOutboundMessageUseCase } from './queue-outbound-message.use-case';
 import { GenerateConversationReplyUseCase } from './generate-conversation-reply.use-case';
 import { ParsedWhatsAppWebhook } from '../../infrastructure/parsers/whatsapp-webhook.parser';
@@ -24,6 +25,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
     private readonly conversationRepository: ConversationRepository,
     @Inject(MESSAGE_REPOSITORY)
     private readonly messageRepository: MessageRepository,
+    private readonly resolveAutoReplyUseCase: ResolveAutoReplyUseCase,
     private readonly generateConversationReplyUseCase: GenerateConversationReplyUseCase,
     private readonly queueOutboundMessageUseCase: QueueOutboundMessageUseCase,
   ) {}
@@ -56,6 +58,30 @@ export class ProcessInboundWhatsAppMessageUseCase {
     });
 
     if (payload.messageType === 'UNKNOWN') {
+      return;
+    }
+
+    const autoReply = await this.resolveAutoReplyUseCase.execute(
+      payload.text,
+      conversation.locale,
+    );
+
+    if (autoReply) {
+      const outboundMessage = await this.messageRepository.create({
+        conversationId: conversation.id,
+        direction: 'OUTBOUND',
+        type: 'TEXT',
+        providerMessageId: null,
+        text: autoReply.text,
+        status: 'QUEUED',
+        metadata: {
+          responseSource: 'AUTO_REPLY',
+          autoReplyId: autoReply.id,
+          autoReplyKey: autoReply.key,
+        },
+      });
+
+      await this.queueOutboundMessageUseCase.execute(outboundMessage.id);
       return;
     }
 

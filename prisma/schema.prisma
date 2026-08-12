@@ -58,6 +58,12 @@ enum ToolExecutionStatus {
   FAILED
 }
 
+enum AutoReplyMatchType {
+  EXACT
+  CONTAINS
+  REGEX
+}
+
 model Contact {
   id           String         @id @default(uuid())
   externalId   String         @unique @map("external_id")
@@ -171,4 +177,21 @@ model Handoff {
 
   @@index([conversationId, status], map: "idx_alc_handoffs_conversation_status")
   @@map("alc_handoffs")
+}
+
+model AutoReply {
+  id           String             @id @default(uuid())
+  key          String             @unique
+  title        String
+  matchType    AutoReplyMatchType @map("match_type")
+  patterns     Json
+  responseText String             @map("response_text")
+  priority     Int                @default(0)
+  isActive     Boolean            @default(true) @map("is_active")
+  locale       String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@index([isActive, locale, priority], map: "idx_alc_auto_replies_active_locale_priority")
+  @@map("alc_auto_replies")
 }

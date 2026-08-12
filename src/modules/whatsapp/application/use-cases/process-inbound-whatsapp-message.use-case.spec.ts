@@ -1,3 +1,5 @@
+import { InMemoryAutoReplyRepository } from '@modules/auto-replies/infrastructure/repositories/in-memory-auto-reply.repository';
+import { ResolveAutoReplyUseCase } from '@modules/auto-replies/application/use-cases/resolve-auto-reply.use-case';
 import { RequestHumanHandoffTool } from '@modules/handoff/infrastructure/tools/request-human-handoff.tool';
 import { InMemoryAiRunRepository } from '@modules/persistence/infrastructure/repositories/in-memory-ai-run.repository';
 import { InMemoryContactRepository } from '@modules/persistence/infrastructure/repositories/in-memory-contact.repository';
@@ -32,10 +34,14 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
         messageRepository,
         [new RequestHumanHandoffTool(handoffUseCase)],
       );
+    const resolveAutoReplyUseCase = new ResolveAutoReplyUseCase(
+      new InMemoryAutoReplyRepository(),
+    );
     const useCase = new ProcessInboundWhatsAppMessageUseCase(
       contactRepository,
       conversationRepository,
       messageRepository,
+      resolveAutoReplyUseCase,
       generateConversationReplyUseCase,
       new QueueOutboundMessageUseCase(queue),
     );
@@ -59,5 +65,73 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       (message) => message.direction === 'OUTBOUND',
     );
     expect(outbound?.text).toContain('ALICE');
+  });
+
+  it('uses an auto reply before calling ai', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
+    );
+    const generateConversationReplyUseCase =
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      );
+    const resolveAutoReplyUseCase = new ResolveAutoReplyUseCase(
+      new InMemoryAutoReplyRepository([
+        {
+          id: 'reply-1',
+          key: 'business_hours',
+          title: 'Business hours',
+          matchType: 'CONTAINS',
+          patterns: ['horario'],
+          responseText: 'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
+          priority: 10,
+          isActive: true,
+          locale: 'es-MX',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]),
+    );
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      resolveAutoReplyUseCase,
+      generateConversationReplyUseCase,
+      new QueueOutboundMessageUseCase(queue),
+    );
+
+    await useCase.execute({
+      externalId: 'wamid.2',
+      eventType: 'text',
+      contactExternalId: '5215550000001',
+      contactName: 'Cliente Demo',
+      from: '5215550000001',
+      messageId: 'wamid.2',
+      messageType: 'TEXT',
+      text: 'Quiero saber su horario',
+      locale: 'es-MX',
+      payload: {},
+    });
+
+    expect(store.aiRuns.size).toBe(0);
+    const outbound = [...store.messages.values()].find(
+      (message) => message.direction === 'OUTBOUND',
+    );
+    expect(outbound?.text).toBe(
+      'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
+    );
+    expect(outbound?.metadata.responseSource).toBe('AUTO_REPLY');
   });
 });

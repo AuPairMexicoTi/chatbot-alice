@@ -2,14 +2,17 @@ import { registerAs } from '@nestjs/config';
 
 export const aiConfig = registerAs('ai', () => ({
   provider: process.env.AI_PROVIDER ?? 'mock',
-  apiKey: process.env.OPENAI_API_KEY ?? '',
-  model: process.env.OPENAI_MODEL ?? '',
-  timeoutMs: Number.parseInt(process.env.OPENAI_TIMEOUT_MS ?? '30000', 10),
+  model:
+    process.env.AI_MODEL ??
+    (process.env.AI_PROVIDER === 'mock' ? 'mock-alice' : ''),
+  timeoutMs: Number.parseInt(process.env.AI_TIMEOUT_MS ?? '30000', 10),
   maxOutputTokens: Number.parseInt(
-    process.env.OPENAI_MAX_OUTPUT_TOKENS ?? '600',
+    process.env.AI_MAX_OUTPUT_TOKENS ?? '600',
     10,
   ),
-  store: process.env.OPENAI_STORE === 'true',
+  store: process.env.AI_STORE === 'true',
+  openAiApiKey: process.env.OPENAI_API_KEY ?? '',
+  geminiApiKey: process.env.GEMINI_API_KEY ?? '',
 }));
 
 export type AiConfig = ReturnType<typeof aiConfig>;
