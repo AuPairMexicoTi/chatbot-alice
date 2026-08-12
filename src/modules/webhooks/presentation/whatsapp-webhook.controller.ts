@@ -12,7 +12,6 @@ import {
 import { Request } from 'express';
 import { ReceiveWhatsAppWebhookUseCase } from '../application/use-cases/receive-whatsapp-webhook.use-case';
 import { VerifyWhatsAppWebhookQueryDto } from './dto/verify-whatsapp-webhook-query.dto';
-import { WhatsAppWebhookDto } from './dto/whatsapp-webhook.dto';
 import { Inject } from '@nestjs/common';
 import {
   WEBHOOK_VERIFIER,
@@ -31,9 +30,9 @@ export class WhatsAppWebhookController {
   @Get()
   verify(@Query() query: VerifyWhatsAppWebhookQueryDto): string {
     const result = this.webhookVerifier.verifyChallenge(
-      query['hub.mode'],
-      query['hub.verify_token'],
-      query['hub.challenge'],
+      query['hub.mode'] ?? query.hub_mode ?? '',
+      query['hub.verify_token'] ?? query.hub_verify_token ?? '',
+      query['hub.challenge'] ?? query.hub_challenge ?? '',
     );
 
     if (!result) {
@@ -48,7 +47,7 @@ export class WhatsAppWebhookController {
   async receive(
     @Req() request: Request & { rawBody?: Buffer },
     @Headers('x-hub-signature-256') signatureHeader: string | undefined,
-    @Body() body: WhatsAppWebhookDto,
+    @Body() body: unknown,
   ): Promise<{ received: true }> {
     const validSignature = this.webhookVerifier.verifySignature({
       rawBody: request.rawBody ?? Buffer.from(JSON.stringify(body)),
@@ -60,7 +59,7 @@ export class WhatsAppWebhookController {
     }
 
     await this.receiveWhatsAppWebhookUseCase.execute(
-      body as unknown as JsonValue,
+      body as JsonValue,
       this.sanitizeHeaders(request.headers),
     );
     return { received: true };

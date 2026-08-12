@@ -11,6 +11,7 @@ export interface CreateWebhookEventInput {
 }
 
 export interface WebhookEventRepository {
+  findById(id: string): Promise<WebhookEvent | null>;
   findByExternalId(externalId: string): Promise<WebhookEvent | null>;
   create(input: CreateWebhookEventInput): Promise<WebhookEvent>;
   updateStatus(id: string, status: WebhookStatus): Promise<WebhookEvent>;

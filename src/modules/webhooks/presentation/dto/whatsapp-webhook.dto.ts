@@ -7,6 +7,16 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+class WhatsAppMetadataDto {
+  @IsOptional()
+  @IsString()
+  display_phone_number?: string;
+
+  @IsOptional()
+  @IsString()
+  phone_number_id?: string;
+}
+
 class WhatsAppMessageTextDto {
   @IsOptional()
   @IsString()
@@ -25,6 +35,10 @@ class WhatsAppMessageDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
+  timestamp?: string;
 
   @IsOptional()
   @ValidateNested()
@@ -50,6 +64,15 @@ class WhatsAppContactDto {
 }
 
 class WhatsAppValueDto {
+  @IsOptional()
+  @IsString()
+  messaging_product?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WhatsAppMetadataDto)
+  metadata?: WhatsAppMetadataDto;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

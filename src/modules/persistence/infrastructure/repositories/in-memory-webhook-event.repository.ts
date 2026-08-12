@@ -13,6 +13,10 @@ import { InMemoryStore } from './in-memory.store';
 export class InMemoryWebhookEventRepository implements WebhookEventRepository {
   constructor(private readonly store: InMemoryStore) {}
 
+  async findById(id: string): Promise<WebhookEvent | null> {
+    return this.store.webhooks.get(id) ?? null;
+  }
+
   async findByExternalId(externalId: string): Promise<WebhookEvent | null> {
     return (
       [...this.store.webhooks.values()].find(

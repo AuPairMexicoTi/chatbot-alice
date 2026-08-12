@@ -33,6 +33,8 @@ import { InMemoryQueueAdapter } from './infrastructure/adapters/in-memory-queue.
 import { MetaWhatsAppGateway } from './infrastructure/adapters/meta-whatsapp.gateway';
 import { MockWhatsAppGateway } from './infrastructure/adapters/mock-whatsapp.gateway';
 import { WhatsAppWebhookParser } from './infrastructure/parsers/whatsapp-webhook.parser';
+import { WhatsAppInboundProcessor } from './infrastructure/processors/whatsapp-inbound.processor';
+import { WhatsAppOutboundProcessor } from './infrastructure/processors/whatsapp-outbound.processor';
 import { MetaWebhookVerifierService } from './infrastructure/services/meta-webhook-verifier.service';
 import { WHATSAPP_GATEWAY } from './domain/whatsapp-gateway';
 import { InMemoryAiRunRepository } from '@modules/persistence/infrastructure/repositories/in-memory-ai-run.repository';
@@ -66,6 +68,8 @@ import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.ser
     BullOutboundQueueAdapter,
     MetaWebhookVerifierService,
     WhatsAppWebhookParser,
+    WhatsAppInboundProcessor,
+    WhatsAppOutboundProcessor,
     ResolveAutoReplyUseCase,
     GenerateConversationReplyUseCase,
     ProcessInboundWhatsAppMessageUseCase,

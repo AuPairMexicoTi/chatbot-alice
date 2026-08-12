@@ -40,7 +40,10 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
       });
 
       if (!response.ok) {
-        throw new Error(`Meta WhatsApp responded with ${response.status}`);
+        const errorBody = await response.text();
+        throw new Error(
+          `Meta WhatsApp responded with ${response.status}: ${errorBody}`,
+        );
       }
 
       const data = (await response.json()) as {
