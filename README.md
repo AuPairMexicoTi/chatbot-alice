@@ -36,6 +36,8 @@ pnpm check
 - `http://localhost:3000/docs`
 - `http://localhost:3000/api/v1/health/live`
 - `http://localhost:3000/api/v1/health/ready`
+- `GET /api/v1/auto-replies`
+- `POST /api/v1/auto-replies`
 - `GET /api/v1/webhooks/whatsapp`
 - `POST /api/v1/webhooks/whatsapp`
 
@@ -62,8 +64,34 @@ Predetermined replies can be resolved before AI.
 
 - Entries live in `alc_auto_replies`
 - They can be edited with `pnpm db:studio`
+- They can also be managed from Swagger with `GET /api/v1/auto-replies` and `POST /api/v1/auto-replies`
 - Matching runs before `AiGateway`
 - If an active rule matches, ALICE replies without consuming AI tokens
+
+## WhatsApp outbound messages
+
+Outbound WhatsApp messages currently support:
+
+- `TEXT`
+- `IMAGE`
+
+For `IMAGE` messages:
+
+- `text` is used as the optional caption
+- `metadata.imageUrl` is required
+- The image URL must be publicly accessible by Meta
+
+Example payload shape at the domain level:
+
+```json
+{
+  "type": "IMAGE",
+  "text": "Conoce nuestro brochure",
+  "metadata": {
+    "imageUrl": "https://example.com/brochure.jpg"
+  }
+}
+```
 
 ## Architecture
 

@@ -15,7 +15,9 @@ export class ResolveAutoReplyUseCase {
   async execute(
     text: string | null,
     locale: string,
-  ): Promise<{ id: string; key: string; text: string } | null> {
+  ): Promise<
+    { id: string; key: string; text: string; imageUrl: string | null } | null
+  > {
     const normalizedInput = this.normalize(text);
     if (!normalizedInput) {
       return null;
@@ -30,6 +32,7 @@ export class ResolveAutoReplyUseCase {
           id: autoReply.id,
           key: autoReply.key,
           text: autoReply.responseText,
+          imageUrl: autoReply.responseImageUrl,
         };
       }
     }

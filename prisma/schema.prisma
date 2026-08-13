@@ -20,6 +20,7 @@ enum MessageDirection {
 
 enum MessageType {
   TEXT
+  IMAGE
   UNKNOWN
   SYSTEM
 }
@@ -186,6 +187,7 @@ model AutoReply {
   matchType    AutoReplyMatchType @map("match_type")
   patterns     Json
   responseText String             @map("response_text")
+  responseImageUrl String?        @map("response_image_url")
   priority     Int                @default(0)
   isActive     Boolean            @default(true) @map("is_active")
   locale       String?

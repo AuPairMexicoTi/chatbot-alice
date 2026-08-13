@@ -13,6 +13,7 @@ import { RequestContextMiddleware } from '@shared/presentation/middleware/reques
 import { ValidationPipe } from '@nestjs/common';
 import { RootModule } from '@modules/root/root.module';
 import { HealthModule } from '@modules/health/health.module';
+import { AutoRepliesModule } from '@modules/auto-replies/auto-replies.module';
 import { WebhooksModule } from '@modules/webhooks/webhooks.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { WebhooksModule } from '@modules/webhooks/webhooks.module';
     PrismaModule,
     RootModule,
     HealthModule,
+    AutoRepliesModule,
     WebhooksModule,
     ThrottlerModule.forRoot([
       {

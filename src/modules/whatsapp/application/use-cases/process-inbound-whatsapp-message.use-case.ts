@@ -67,10 +67,11 @@ export class ProcessInboundWhatsAppMessageUseCase {
     );
 
     if (autoReply) {
+      const hasImage = Boolean(autoReply.imageUrl);
       const outboundMessage = await this.messageRepository.create({
         conversationId: conversation.id,
         direction: 'OUTBOUND',
-        type: 'TEXT',
+        type: hasImage ? 'IMAGE' : 'TEXT',
         providerMessageId: null,
         text: autoReply.text,
         status: 'QUEUED',
@@ -78,6 +79,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
           responseSource: 'AUTO_REPLY',
           autoReplyId: autoReply.id,
           autoReplyKey: autoReply.key,
+          ...(hasImage ? { imageUrl: autoReply.imageUrl } : {}),
         },
       });
 

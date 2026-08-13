@@ -39,7 +39,7 @@ describe('Prisma mappers', () => {
       id: '1',
       conversationId: 'conversation-1',
       direction: 'INBOUND',
-      type: 'TEXT',
+      type: 'IMAGE',
       providerMessageId: 'wamid.1',
       text: 'hola',
       status: 'RECEIVED',
@@ -48,6 +48,7 @@ describe('Prisma mappers', () => {
       updatedAt: now,
     });
 
+    expect(result.type).toBe('IMAGE');
     expect(result.metadata.source).toBe('test');
   });
 

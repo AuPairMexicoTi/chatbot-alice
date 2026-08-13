@@ -7,6 +7,7 @@ export interface AutoReply {
   matchType: AutoReplyMatchType;
   patterns: string[];
   responseText: string;
+  responseImageUrl: string | null;
   priority: number;
   isActive: boolean;
   locale: string | null;

@@ -95,6 +95,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
           matchType: 'CONTAINS',
           patterns: ['horario'],
           responseText: 'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
+          responseImageUrl: null,
           priority: 10,
           isActive: true,
           locale: 'es-MX',
@@ -133,5 +134,76 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
     );
     expect(outbound?.metadata.responseSource).toBe('AUTO_REPLY');
+  });
+
+  it('queues an image auto reply when the rule includes a media url', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
+    );
+    const generateConversationReplyUseCase =
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      );
+    const resolveAutoReplyUseCase = new ResolveAutoReplyUseCase(
+      new InMemoryAutoReplyRepository([
+        {
+          id: 'reply-2',
+          key: 'welcome',
+          title: 'Welcome',
+          matchType: 'CONTAINS',
+          patterns: ['hola'],
+          responseText: 'Bienvenida a Au Pair Mexico',
+          responseImageUrl:
+            'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
+          priority: 20,
+          isActive: true,
+          locale: 'es-MX',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]),
+    );
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      resolveAutoReplyUseCase,
+      generateConversationReplyUseCase,
+      new QueueOutboundMessageUseCase(queue),
+    );
+
+    await useCase.execute({
+      externalId: 'wamid.3',
+      eventType: 'text',
+      contactExternalId: '5215550000001',
+      contactName: 'Cliente Demo',
+      from: '5215550000001',
+      messageId: 'wamid.3',
+      messageType: 'TEXT',
+      text: 'Hola',
+      locale: 'es-MX',
+      payload: {},
+    });
+
+    const outbound = [...store.messages.values()].find(
+      (message) => message.direction === 'OUTBOUND',
+    );
+
+    expect(outbound?.type).toBe('IMAGE');
+    expect(outbound?.text).toBe('Bienvenida a Au Pair Mexico');
+    expect(outbound?.metadata.imageUrl).toBe(
+      'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
+    );
   });
 });

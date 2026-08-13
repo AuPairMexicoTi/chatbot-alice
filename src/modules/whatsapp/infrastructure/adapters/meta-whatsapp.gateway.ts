@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  SendImageMessageInput,
   SendMessageResult,
   SendTextMessageInput,
   WhatsAppGateway,
@@ -10,33 +11,26 @@ import {
 export class MetaWhatsAppGateway implements WhatsAppGateway {
   constructor(private readonly configService: ConfigService) {}
 
-  async sendTextMessage(
-    input: SendTextMessageInput,
-  ): Promise<SendMessageResult> {
+  private buildMessagesUrl(): URL {
+    return new URL(
+      `/${this.configService.getOrThrow<string>('whatsapp.graphApiVersion')}/${this.configService.getOrThrow<string>('whatsapp.phoneNumberId')}/messages`,
+      this.configService.getOrThrow<string>('whatsapp.graphApiBaseUrl'),
+    );
+  }
+
+  private async sendMessage(body: Record<string, unknown>): Promise<SendMessageResult> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const url = new URL(
-        `/${this.configService.getOrThrow<string>('whatsapp.graphApiVersion')}/${this.configService.getOrThrow<string>('whatsapp.phoneNumberId')}/messages`,
-        this.configService.getOrThrow<string>('whatsapp.graphApiBaseUrl'),
-      );
-
-      const response = await fetch(url, {
+      const response = await fetch(this.buildMessagesUrl(), {
         method: 'POST',
         signal: controller.signal,
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${this.configService.getOrThrow<string>('whatsapp.accessToken')}`,
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: input.to,
-          type: 'text',
-          text: {
-            body: input.text,
-          },
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -57,5 +51,32 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  async sendTextMessage(
+    input: SendTextMessageInput,
+  ): Promise<SendMessageResult> {
+    return this.sendMessage({
+      messaging_product: 'whatsapp',
+      to: input.to,
+      type: 'text',
+      text: {
+        body: input.text,
+      },
+    });
+  }
+
+  async sendImageMessage(
+    input: SendImageMessageInput,
+  ): Promise<SendMessageResult> {
+    return this.sendMessage({
+      messaging_product: 'whatsapp',
+      to: input.to,
+      type: 'image',
+      image: {
+        link: input.imageUrl,
+        caption: input.caption,
+      },
+    });
   }
 }

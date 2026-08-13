@@ -1,4 +1,4 @@
-import { AutoReply as PrismaAutoReply, Prisma } from '@generated/prisma/client';
+import { AutoReply as PrismaAutoReply, Prisma } from '@generated/prisma';
 import { AutoReply } from '../../domain/auto-reply.entity';
 
 const mapPatterns = (value: Prisma.JsonValue): string[] => {
@@ -20,6 +20,7 @@ export class PrismaAutoReplyMapper {
       matchType: record.matchType,
       patterns: mapPatterns(record.patterns),
       responseText: record.responseText,
+      responseImageUrl: record.responseImageUrl,
       priority: record.priority,
       isActive: record.isActive,
       locale: record.locale,
