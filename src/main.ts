@@ -1,4 +1,3 @@
-import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -18,15 +17,20 @@ async function bootstrap(): Promise<void> {
 
   const configService = app.get(ConfigService);
   const prefix = configService.getOrThrow<string>('app.prefix');
-  const bodyLimit = configService.getOrThrow<string>('app.bodyLimit');
+  const port = configService.getOrThrow<number>('app.port');
   const corsOrigins = configService.getOrThrow<string[]>('app.corsOrigins');
   const swaggerEnabled =
     configService.getOrThrow<boolean>('app.swaggerEnabled');
+  const allowedCorsOrigins = new Set([
+    ...corsOrigins,
+    `http://localhost:${port}`,
+    `http://127.0.0.1:${port}`,
+  ]);
   const corsOriginDelegate = (
     origin: string | undefined,
     callback: (error: Error | null, allow?: boolean) => void,
   ) => {
-    if (!origin || corsOrigins.includes(origin)) {
+    if (!origin || allowedCorsOrigins.has(origin)) {
       callback(null, true);
       return;
     }
@@ -34,8 +38,6 @@ async function bootstrap(): Promise<void> {
     callback(new Error('CORS origin not allowed'));
   };
 
-  app.use(json({ limit: bodyLimit }));
-  app.use(urlencoded({ extended: true, limit: bodyLimit }));
   app.use(helmet());
   app.enableCors({
     origin: corsOriginDelegate,
@@ -65,7 +67,6 @@ async function bootstrap(): Promise<void> {
     SwaggerModule.setup('docs', app, document);
   }
 
-  const port = configService.getOrThrow<number>('app.port');
   await app.listen(port);
 
   logger.log({

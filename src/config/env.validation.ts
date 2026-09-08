@@ -29,6 +29,10 @@ export const envValidationSchema = Joi.object({
   WHATSAPP_OUTBOUND_QUEUE: Joi.string().required(),
   QUEUE_ATTEMPTS: Joi.number().min(1).required(),
   QUEUE_BACKOFF_MS: Joi.number().min(0).required(),
+  CONVERSATION_INACTIVITY_TIMEOUT_MINUTES: Joi.number()
+    .integer()
+    .min(1)
+    .required(),
   WHATSAPP_PROVIDER: Joi.string().valid('mock', 'meta').required(),
   WHATSAPP_GRAPH_API_BASE_URL: Joi.string().uri().required(),
   WHATSAPP_GRAPH_API_VERSION: Joi.when('WHATSAPP_PROVIDER', {
@@ -73,4 +77,8 @@ export const envValidationSchema = Joi.object({
   AI_TIMEOUT_MS: Joi.number().min(1000).required(),
   AI_MAX_OUTPUT_TOKENS: Joi.number().min(1).required(),
   AI_STORE: Joi.boolean().required(),
+  CRM_WEBHOOK_SECRET: Joi.string().allow('').required(),
+  CRM_ALICE_LEADS_URL: Joi.string().uri().allow('').required(),
+  CRM_ALICE_HANDOFFS_URL: Joi.string().uri().allow('').required(),
+  CRM_ALICE_INTEGRATION_SECRET: Joi.string().allow('').required(),
 }).unknown(true);

@@ -18,7 +18,9 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
     );
   }
 
-  private async sendMessage(body: Record<string, unknown>): Promise<SendMessageResult> {
+  private async sendMessage(
+    body: Record<string, unknown>,
+  ): Promise<SendMessageResult> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -58,7 +60,7 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
   ): Promise<SendMessageResult> {
     return this.sendMessage({
       messaging_product: 'whatsapp',
-      to: input.to,
+      to: this.normalizeRecipientPhoneNumber(input.to),
       type: 'text',
       text: {
         body: input.text,
@@ -71,12 +73,24 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
   ): Promise<SendMessageResult> {
     return this.sendMessage({
       messaging_product: 'whatsapp',
-      to: input.to,
+      to: this.normalizeRecipientPhoneNumber(input.to),
       type: 'image',
       image: {
         link: input.imageUrl,
         caption: input.caption,
       },
     });
+  }
+
+  private normalizeRecipientPhoneNumber(phoneNumber: string): string {
+    const normalizedPhoneNumber = phoneNumber.replace(/\D/g, '');
+
+    // Meta's current Cloud API recipient format for Mexican mobile numbers
+    // omits the legacy mobile "1" that may still be present in webhook wa_id.
+    if (normalizedPhoneNumber.startsWith('521')) {
+      return `52${normalizedPhoneNumber.slice(3)}`;
+    }
+
+    return normalizedPhoneNumber;
   }
 }

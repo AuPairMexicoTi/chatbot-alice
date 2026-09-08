@@ -31,6 +31,14 @@ export class PrismaAutoReplyRepository implements AutoReplyRepository {
     return records.map(PrismaAutoReplyMapper.toDomain);
   }
 
+  async findByKey(key: string): Promise<AutoReply | null> {
+    const record = await this.prismaService.autoReply.findUnique({
+      where: { key },
+    });
+
+    return record ? PrismaAutoReplyMapper.toDomain(record) : null;
+  }
+
   async create(input: CreateAutoReplyInput): Promise<AutoReply> {
     const record = await this.prismaService.autoReply.create({
       data: {

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { aiConfig } from './ai.config';
 import { appConfig } from './app.config';
+import { crmConfig } from './crm.config';
+import { conversationFlowConfig } from './conversation-flow.config';
 import { databaseConfig } from './database.config';
 import { envValidationSchema } from './env.validation';
 import { redisConfig } from './redis.config';
@@ -20,7 +22,15 @@ const createEnvFilePaths = (nodeEnv: string): string[] => [
       isGlobal: true,
       cache: true,
       envFilePath: createEnvFilePaths(process.env.NODE_ENV ?? 'development'),
-      load: [appConfig, databaseConfig, redisConfig, whatsappConfig, aiConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        redisConfig,
+        whatsappConfig,
+        aiConfig,
+        crmConfig,
+        conversationFlowConfig,
+      ],
       validationSchema: envValidationSchema,
     }),
   ],

@@ -14,15 +14,15 @@ representar de forma canónica.
 
 ## Criterios de aceptación y dónde se cubren
 
-| Criterio | Sección |
-| --- | --- |
-| Cómo se representan nodos y transiciones | [2. Modelo de definición del flujo](#2-modelo-de-definición-del-flujo) |
-| Cómo se almacena el estado actual de la conversación | [3. Estado de la conversación](#3-estado-de-la-conversación) |
-| Persistencia y recuperación del estado por usuario (paso actual + datos capturados) | [3.4 Contrato de persistencia y recuperación del estado](#34-contrato-de-persistencia-y-recuperación-del-estado) |
-| Lógica de recorrido: mostrar el mensaje del paso, evaluar respuestas y dirigir a la rama siguiente | [4. Algoritmo del motor (dominio puro)](#4-algoritmo-del-motor-dominio-puro) |
-| Carga e implementación de los textos del guion oficial (bienvenida, continuidad, cierre, error) | [6. Contenido del guion oficial](#6-contenido-del-guion-oficial-carga-e-implementación-de-textos) |
-| Comportamiento de reinicio, abandono, retoma y fallback | [5. Ciclo de vida: reinicio / abandono / retoma / fallback](#5-ciclo-de-vida-reinicio--abandono--retoma--fallback) |
-| Compatibilidad con la arquitectura actual | [1. Encaje arquitectónico](#1-encaje-arquitectónico) y [7. Impacto en el código existente](#7-impacto-en-el-código-existente) |
+| Criterio                                                                                           | Sección                                                                                                                       |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Cómo se representan nodos y transiciones                                                           | [2. Modelo de definición del flujo](#2-modelo-de-definición-del-flujo)                                                        |
+| Cómo se almacena el estado actual de la conversación                                               | [3. Estado de la conversación](#3-estado-de-la-conversación)                                                                  |
+| Persistencia y recuperación del estado por usuario (paso actual + datos capturados)                | [3.4 Contrato de persistencia y recuperación del estado](#34-contrato-de-persistencia-y-recuperación-del-estado)              |
+| Lógica de recorrido: mostrar el mensaje del paso, evaluar respuestas y dirigir a la rama siguiente | [4. Algoritmo del motor (dominio puro)](#4-algoritmo-del-motor-dominio-puro)                                                  |
+| Carga e implementación de los textos del guion oficial (bienvenida, continuidad, cierre, error)    | [6. Contenido del guion oficial](#6-contenido-del-guion-oficial-carga-e-implementación-de-textos)                             |
+| Comportamiento de reinicio, abandono, retoma y fallback                                            | [5. Ciclo de vida: reinicio / abandono / retoma / fallback](#5-ciclo-de-vida-reinicio--abandono--retoma--fallback)            |
+| Compatibilidad con la arquitectura actual                                                          | [1. Encaje arquitectónico](#1-encaje-arquitectónico) y [7. Impacto en el código existente](#7-impacto-en-el-código-existente) |
 
 ---
 
@@ -92,13 +92,13 @@ inbound persistido
 `AdvanceConversationFlowUseCase` produce **efectos declarativos** que se ejecutan
 con los casos de uso ya existentes:
 
-| Efecto | Ejecutor existente |
-| --- | --- |
-| `SEND_MESSAGE` | `messageRepository.create(OUTBOUND, QUEUED)` + `QueueOutboundMessageUseCase` |
-| `REQUEST_HANDOFF` | `RequestHumanHandoffUseCase` (ya pone `Conversation.status = WAITING_HUMAN`) |
-| `CLOSE_CONVERSATION` | `conversationRepository.updateStatus(CLOSED)` |
-| `SCHEDULE_REMINDER` / `CANCEL_REMINDER` | job BullMQ retardado (`flow-maintenance`) |
-| `SET_VARIABLE` | ya aplicado dentro del `nextState` |
+| Efecto                                  | Ejecutor existente                                                           |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| `SEND_MESSAGE`                          | `messageRepository.create(OUTBOUND, QUEUED)` + `QueueOutboundMessageUseCase` |
+| `REQUEST_HANDOFF`                       | `RequestHumanHandoffUseCase` (ya pone `Conversation.status = WAITING_HUMAN`) |
+| `CLOSE_CONVERSATION`                    | `conversationRepository.updateStatus(CLOSED)`                                |
+| `SCHEDULE_REMINDER` / `CANCEL_REMINDER` | job BullMQ retardado (`flow-maintenance`)                                    |
+| `SET_VARIABLE`                          | ya aplicado dentro del `nextState`                                           |
 
 Así el dominio queda libre de infraestructura y se reutiliza todo el wiring
 actual de colas y handoff.
@@ -125,49 +125,49 @@ actual de colas y handoff.
 interface FlowDefinition {
   key: string;
   version: number;
-  locale: string;                 // 'es-MX'
+  locale: string; // 'es-MX'
   entryNodeId: string;
   globals: FlowGlobals;
   nodes: FlowNode[];
 }
 
 interface FlowGlobals {
-  maxAttemptsPerNode: number;      // 3 (Notas globales del diagrama)
-  maxChainedHops: number;          // 20: guarda anti-bucle al encadenar nodos sin input
-  reminderAfter: string;           // '24h' sin respuesta -> recordatorio
-  closeAfter: string;              // '48h' tras el recordatorio -> cierre
-  nonTextBehavior: 'REPROMPT';     // audio/imagen/ubicación/sticker -> pedir texto
+  maxAttemptsPerNode: number; // 3 (Notas globales del diagrama)
+  maxChainedHops: number; // 20: guarda anti-bucle al encadenar nodos sin input
+  reminderAfter: string; // '24h' sin respuesta -> recordatorio
+  closeAfter: string; // '48h' tras el recordatorio -> cierre
+  nonTextBehavior: 'REPROMPT'; // audio/imagen/ubicación/sticker -> pedir texto
   interceptors: GlobalInterceptor[]; // palabras clave activas en cualquier punto
 }
 
 interface GlobalInterceptor {
-  match: string[];                 // ['asesor', 'humano', 'ayuda']
+  match: string[]; // ['asesor', 'humano', 'ayuda']
   action:
-    | { kind: 'GOTO'; nodeId: string; keepVariables: boolean }  // 'menu' / 'inicio'
-    | { kind: 'HANDOFF'; reason: string }                       // 'asesor'
-    | { kind: 'CLOSE'; nodeId: string };                        // 'salir' / 'cancelar'
+    | { kind: 'GOTO'; nodeId: string; keepVariables: boolean } // 'menu' / 'inicio'
+    | { kind: 'HANDOFF'; reason: string } // 'asesor'
+    | { kind: 'CLOSE'; nodeId: string }; // 'salir' / 'cancelar'
 }
 
 interface FlowNode {
   id: string;
   type: 'MESSAGE' | 'PROMPT' | 'DECISION' | 'ACTION' | 'TERMINAL';
-  content?: string;               // texto exacto del guion; soporta {{variable}}
+  content?: string; // texto exacto del guion; soporta {{variable}}
   imageUrl?: string;
   expects?: 'TEXT' | 'OPTION' | 'NONE';
-  onEnter?: FlowEffectSpec[];     // efectos al entrar (enviar mensaje, llamar tool)
-  transitions: FlowTransition[];  // evaluadas por prioridad ascendente
+  onEnter?: FlowEffectSpec[]; // efectos al entrar (enviar mensaje, llamar tool)
+  transitions: FlowTransition[]; // evaluadas por prioridad ascendente
   retry?: {
-    max?: number;                 // default: globals.maxAttemptsPerNode
-    fallbackContent?: string;     // mensaje de reintento
-    onExhausted: string;          // nodeId | 'HANDOFF'
+    max?: number; // default: globals.maxAttemptsPerNode
+    fallbackContent?: string; // mensaje de reintento
+    onExhausted: string; // nodeId | 'HANDOFF'
   };
   terminal?: { outcome: 'CLOSED' | 'AWAITING_HUMAN' };
 }
 
 interface FlowTransition {
   id: string;
-  to: string;                     // nodeId destino
-  priority: number;               // menor = se evalúa antes
+  to: string; // nodeId destino
+  priority: number; // menor = se evalúa antes
   when: FlowCondition;
   setVariables?: Record<string, string>;
 }
@@ -177,10 +177,15 @@ type FlowCondition =
   | { kind: 'EQUALS'; value: string; normalize?: boolean }
   | { kind: 'ONE_OF'; values: string[] }
   | { kind: 'REGEX'; pattern: string; flags?: string }
-  | { kind: 'VARIABLE'; name: string; op: 'eq' | 'neq' | 'gte' | 'lte'; value: string | number }
+  | {
+      kind: 'VARIABLE';
+      name: string;
+      op: 'eq' | 'neq' | 'gte' | 'lte';
+      value: string | number;
+    }
   | { kind: 'ATTEMPTS_GTE'; value: number }
-  | { kind: 'INTENT'; intent: string }   // opcional v2, vía IntentClassifierPort
-  | { kind: 'FALLBACK' };                 // gana solo si nada más matcheó
+  | { kind: 'INTENT'; intent: string } // opcional v2, vía IntentClassifierPort
+  | { kind: 'FALLBACK' }; // gana solo si nada más matcheó
 ```
 
 - **Nodos** = `FlowNode`. Tipos: `MESSAGE` (informa y avanza), `PROMPT` /
@@ -191,23 +196,23 @@ type FlowCondition =
   espacios) reutiliza la lógica ya presente en `ResolveAutoReplyUseCase`.
 - **Condiciones** = `FlowCondition` tipada y evaluada por una función pura
   `evaluate(condition, ctx): boolean`, con `ctx = { normalizedText, rawText,
-  messageType, attempts, variables, now }`.
+messageType, attempts, variables, now }`.
 
 ### 2.3 Mapeo del diagrama Au Pair al esquema
 
-| Elemento del JSON | Representación canónica |
-| --- | --- |
-| `start` "Inicio" | `ACTION`, `entryNodeId`, transición `ALWAYS -> menu` |
-| `menu` + `menuNote` | `DECISION`, `content` = texto de `menuNote`, `expects: 'OPTION'` |
-| aristas `dMenu` con label `1..4` | transiciones `EQUALS "1" -> n2`, ... `"4" -> n6` |
-| labels `asesor / ayuda / humano`, `salir / cancelar` | `globals.interceptors` (además de transiciones locales) |
-| `fbMenu` + `dMenuRetry` (`intentos >= 3?`) | `menu.retry = { max: 3, fallbackContent: fbMenuNote, onExhausted: 'HANDOFF' }` |
-| fichas `cAle..cSui` + notas | nodos `MESSAGE` con `content` de cada `*Note`, transición a `dPais2` |
-| `dPais` "Selecciona país" | `DECISION` con `ONE_OF`/`REGEX` por país + `FALLBACK` a retry |
-| `dPais2` / `d4` / `d5` / `d6` "Aplicar / Regresar (máx 3)" | `DECISION` con `retry.onExhausted: 'HANDOFF'` |
-| `handoffAsesor` -> `endHandoff` | `TERMINAL { outcome: 'AWAITING_HUMAN' }` + efecto `REQUEST_HANDOFF` |
-| `despedida` -> `endDespedida` | `TERMINAL { outcome: 'CLOSED' }` + efecto `CLOSE_CONVERSATION` |
-| Notas globales (24h / 48h / 3 intentos / multimedia) | `globals` |
+| Elemento del JSON                                          | Representación canónica                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `start` "Inicio"                                           | `ACTION`, `entryNodeId`, transición `ALWAYS -> menu`                           |
+| `menu` + `menuNote`                                        | `DECISION`, `content` = texto de `menuNote`, `expects: 'OPTION'`               |
+| aristas `dMenu` con label `1..4`                           | transiciones `EQUALS "1" -> n2`, ... `"4" -> n6`                               |
+| labels `asesor / ayuda / humano`, `salir / cancelar`       | `globals.interceptors` (además de transiciones locales)                        |
+| `fbMenu` + `dMenuRetry` (`intentos >= 3?`)                 | `menu.retry = { max: 3, fallbackContent: fbMenuNote, onExhausted: 'HANDOFF' }` |
+| fichas `cAle..cSui` + notas                                | nodos `MESSAGE` con `content` de cada `*Note`, transición a `dPais2`           |
+| `dPais` "Selecciona país"                                  | `DECISION` con `ONE_OF`/`REGEX` por país + `FALLBACK` a retry                  |
+| `dPais2` / `d4` / `d5` / `d6` "Aplicar / Regresar (máx 3)" | `DECISION` con `retry.onExhausted: 'HANDOFF'`                                  |
+| `handoffAsesor` -> `endHandoff`                            | `TERMINAL { outcome: 'AWAITING_HUMAN' }` + efecto `REQUEST_HANDOFF`            |
+| `despedida` -> `endDespedida`                              | `TERMINAL { outcome: 'CLOSED' }` + efecto `CLOSE_CONVERSATION`                 |
+| Notas globales (24h / 48h / 3 intentos / multimedia)       | `globals`                                                                      |
 
 Conclusión: el diagrama es representable sin pérdida.
 
@@ -317,9 +322,9 @@ Diseño clave:
 
 ### 3.4 Contrato de persistencia y recuperación del estado
 
-Historia de implementación: *guardar y recuperar el estado conversacional por
+Historia de implementación: _guardar y recuperar el estado conversacional por
 usuario, de forma que cada conversación conserve el paso actual del flujo y los
-datos capturados hasta ese momento.*
+datos capturados hasta ese momento._
 
 "Por usuario" se materializa como **por conversación**: `Contact` (teléfono /
 `externalId`) → `Conversation` → un único `ConversationFlowState`
@@ -338,7 +343,9 @@ export interface NewConversationFlowState {
 }
 
 export interface ConversationFlowStateRepository {
-  findByConversationId(conversationId: string): Promise<ConversationFlowState | null>;
+  findByConversationId(
+    conversationId: string,
+  ): Promise<ConversationFlowState | null>;
   create(input: NewConversationFlowState): Promise<ConversationFlowState>;
   /** upsert por conversationId; concurrencia optimista con `updatedAt` */
   save(state: ConversationFlowState): Promise<ConversationFlowState>;
@@ -378,9 +385,9 @@ bootstrap(conversationId, definition):
 
 #### 3.4.3 Datos capturados (`variables`)
 
-- Cada transición aplica `setVariables` y cada `onEnter` de captura hace *merge*
+- Cada transición aplica `setVariables` y cada `onEnter` de captura hace _merge_
   sobre `state.variables` (nunca reemplazo total): `variables = { ...prev,
-  ...captured }`.
+...captured }`.
 - Los datos parciales **sobreviven al fallback**: un `attempts++` por no-match no
   toca `variables`. Solo el reinicio duro (`reiniciar`) y el abandono mueven
   `variables` a `archivedVariables`.
@@ -390,12 +397,12 @@ bootstrap(conversationId, definition):
 
 #### 3.4.4 Actualización según el tipo de movimiento
 
-| Movimiento | Efecto en el estado |
-| --- | --- |
-| **Avanzar** (transición normal, incl. aristas "hacia atrás" del grafo como `dPais2 -> menu`) | `previousNodeId = currentNodeId`; `currentNodeId = transition.to`; `attempts = 0`; merge `setVariables`; `status = ACTIVE \| WAITING_INPUT \| COMPLETED`. |
-| **Retroceder** (interceptor `atras` / `regresar`) | `GOTO` a `previousNodeId` (un nivel; si es `null`, a `entryNodeId`); `keepVariables: true`; `attempts = 0`; log `reason='BACK'`, `matchedRule='INTERCEPTOR'`. Historia profunda multi-nivel: fuera de v1 — el rastro completo está en `alc_flow_transition_logs` si se necesita reconstruir. |
-| **Escalar** (efecto `REQUEST_HANDOFF`: interceptor `asesor`, `retry.onExhausted`, o nodo terminal de handoff) | `status = AWAITING_HUMAN`; `currentNodeId` se conserva (permite retomar tras el handoff); se cancelan los jobs de mantenimiento; `RequestHumanHandoffUseCase` pone `Conversation.status = WAITING_HUMAN`. |
-| **Cerrar** (terminal de despedida / abandono) | `status = COMPLETED \| ABANDONED`; `variables -> archivedVariables`; `CLOSE_CONVERSATION`. |
+| Movimiento                                                                                                    | Efecto en el estado                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Avanzar** (transición normal, incl. aristas "hacia atrás" del grafo como `dPais2 -> menu`)                  | `previousNodeId = currentNodeId`; `currentNodeId = transition.to`; `attempts = 0`; merge `setVariables`; `status = ACTIVE \| WAITING_INPUT \| COMPLETED`.                                                                                                                                    |
+| **Retroceder** (interceptor `atras` / `regresar`)                                                             | `GOTO` a `previousNodeId` (un nivel; si es `null`, a `entryNodeId`); `keepVariables: true`; `attempts = 0`; log `reason='BACK'`, `matchedRule='INTERCEPTOR'`. Historia profunda multi-nivel: fuera de v1 — el rastro completo está en `alc_flow_transition_logs` si se necesita reconstruir. |
+| **Escalar** (efecto `REQUEST_HANDOFF`: interceptor `asesor`, `retry.onExhausted`, o nodo terminal de handoff) | `status = AWAITING_HUMAN`; `currentNodeId` se conserva (permite retomar tras el handoff); se cancelan los jobs de mantenimiento; `RequestHumanHandoffUseCase` pone `Conversation.status = WAITING_HUMAN`.                                                                                    |
+| **Cerrar** (terminal de despedida / abandono)                                                                 | `status = COMPLETED \| ABANDONED`; `variables -> archivedVariables`; `CLOSE_CONVERSATION`.                                                                                                                                                                                                   |
 
 Cada `persist` va acompañado de un `FlowTransitionLogRepository.append(...)` en la
 misma unidad lógica de trabajo, de modo que el paso actual y su historia quedan
@@ -439,12 +446,12 @@ onInboundMessage(conversationId, message):
 
 #### 3.4.7 Cobertura de los criterios de aceptación
 
-| Criterio | Mecanismo |
-| --- | --- |
-| Identificar en qué paso va cada conversación | `alc_conversation_flow_states.current_node_id` con `conversation_id @unique`; `load()` lo resuelve en O(1). |
-| El estado se conserva entre mensajes sucesivos | Postgres = verdad + `persist()` write-through tras cada mensaje; Redis solo acelera. |
-| Actualización al avanzar / retroceder / escalar | Tabla de §3.4.4; toda mutación pasa por `FlowEngine.advance` → `persist` + log. |
-| Conversaciones nuevas y reanudadas | `bootstrap()` para nuevas; ramas de reanudación de §3.4.5 + §5.3 (retoma) y §5.1 (reinicio). |
+| Criterio                                        | Mecanismo                                                                                                   |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Identificar en qué paso va cada conversación    | `alc_conversation_flow_states.current_node_id` con `conversation_id @unique`; `load()` lo resuelve en O(1). |
+| El estado se conserva entre mensajes sucesivos  | Postgres = verdad + `persist()` write-through tras cada mensaje; Redis solo acelera.                        |
+| Actualización al avanzar / retroceder / escalar | Tabla de §3.4.4; toda mutación pasa por `FlowEngine.advance` → `persist` + log.                             |
+| Conversaciones nuevas y reanudadas              | `bootstrap()` para nuevas; ramas de reanudación de §3.4.5 + §5.3 (retoma) y §5.1 (reinicio).                |
 
 ---
 
@@ -484,7 +491,7 @@ Pasos:
 5. **Ningún match** (respuesta fuera de flujo) -> `attempts++`.
    - Si `attempts >= (currentNode.retry.max ?? globals.maxAttemptsPerNode)` ->
      seguir `retry.onExhausted` (`'HANDOFF'` por defecto): `status =
-     AWAITING_HUMAN` + `REQUEST_HANDOFF`. `reason = 'RETRY_EXHAUSTED'`.
+AWAITING_HUMAN` + `REQUEST_HANDOFF`. `reason = 'RETRY_EXHAUSTED'`.
    - Si no -> tomar la transición `FALLBACK` explícita si existe; si no, emitir
      reprompt con `retry.fallbackContent` + reenviar `currentNode.content`.
      `status = WAITING_INPUT`. `reason = 'FALLBACK'`.
@@ -517,10 +524,10 @@ avanzar se emite el `content` del destino; en fallback/retoma se reemite el
 
 Un nodo `TERMINAL` define su salida con `terminal.outcome`:
 
-| `outcome` | `FlowStateStatus` | `Conversation.status` | Efectos |
-| --- | --- | --- | --- |
-| `CLOSED` | `COMPLETED` | `CLOSED` | `SEND_MESSAGE(despedida)` + `CLOSE_CONVERSATION` + cancelar jobs de mantenimiento |
-| `AWAITING_HUMAN` | `AWAITING_HUMAN` | `WAITING_HUMAN` | `SEND_MESSAGE(confirmación)` + `REQUEST_HANDOFF` + cancelar jobs |
+| `outcome`        | `FlowStateStatus` | `Conversation.status` | Efectos                                                                           |
+| ---------------- | ----------------- | --------------------- | --------------------------------------------------------------------------------- |
+| `CLOSED`         | `COMPLETED`       | `CLOSED`              | `SEND_MESSAGE(despedida)` + `CLOSE_CONVERSATION` + cancelar jobs de mantenimiento |
+| `AWAITING_HUMAN` | `AWAITING_HUMAN`  | `WAITING_HUMAN`       | `SEND_MESSAGE(confirmación)` + `REQUEST_HANDOFF` + cancelar jobs                  |
 
 Tras un terminal, un inbound nuevo re-arranca el flujo (§3.4.5): `COMPLETED` ->
 reinicio en `entryNodeId`; `AWAITING_HUMAN` -> lo maneja el asesor y el motor no
@@ -529,12 +536,12 @@ responde salvo interceptor explícito. Mapeo Au Pair: `endDespedida` -> `CLOSED`
 
 ### 4.3 Cobertura de los criterios de aceptación
 
-| Criterio | Mecanismo |
-| --- | --- |
-| Avance determinístico entre nodos | `advance` sin E/S (§4); transiciones ordenadas por `priority` + orden de declaración; sin `INTENT` en v1. Tests golden sobre `aupair.flow.json`. |
-| Ramas condicionales según la respuesta | `FlowCondition` tipada (§2.2) evaluada por `evaluate(condition, ctx)`; paso 4 toma la primera que pasa. Cubre labels `1..4`, país, `aplicar`/`regresar`. |
-| Respuestas fuera de flujo con fallback controlado | Paso 3 (no textual, sin gastar intento) + paso 5 (`FALLBACK` / reprompt, `attempts++`, `onExhausted` a los 3) + §5.4 nivel 3 (error de motor -> IA). |
-| Cierre al llegar a una salida definida | §4.2: `TERMINAL` -> `COMPLETED`/`AWAITING_HUMAN` + `CLOSE_CONVERSATION`/`REQUEST_HANDOFF`; jobs cancelados. |
+| Criterio                                          | Mecanismo                                                                                                                                                |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Avance determinístico entre nodos                 | `advance` sin E/S (§4); transiciones ordenadas por `priority` + orden de declaración; sin `INTENT` en v1. Tests golden sobre `aupair.flow.json`.         |
+| Ramas condicionales según la respuesta            | `FlowCondition` tipada (§2.2) evaluada por `evaluate(condition, ctx)`; paso 4 toma la primera que pasa. Cubre labels `1..4`, país, `aplicar`/`regresar`. |
+| Respuestas fuera de flujo con fallback controlado | Paso 3 (no textual, sin gastar intento) + paso 5 (`FALLBACK` / reprompt, `attempts++`, `onExhausted` a los 3) + §5.4 nivel 3 (error de motor -> IA).     |
+| Cierre al llegar a una salida definida            | §4.2: `TERMINAL` -> `COMPLETED`/`AWAITING_HUMAN` + `CLOSE_CONVERSATION`/`REQUEST_HANDOFF`; jobs cancelados.                                              |
 
 ---
 
@@ -575,7 +582,7 @@ Basado en las Notas globales del diagrama (24h / +48h):
   set `reminderSentAt`.
 - `flow:close`: si sigue inactivo -> `status = ABANDONED`, `variables` ->
   `archivedVariables`, efecto `CLOSE_CONVERSATION` (`Conversation.status =
-  CLOSED`), log `reason = 'ABANDON'`. Opcionalmente `SEND_MESSAGE` de cierre por
+CLOSED`), log `reason = 'ABANDON'`. Opcionalmente `SEND_MESSAGE` de cierre por
   inactividad.
 - Guardas anti-carrera: el handler compara `lastInteractionAt` / `status`
   actuales antes de actuar (idempotente).
@@ -620,9 +627,9 @@ del flujo.
 
 ## 6. Contenido del guion oficial (carga e implementación de textos)
 
-Historia de implementación: *cargar los mensajes, respuestas, variantes y textos
+Historia de implementación: _cargar los mensajes, respuestas, variantes y textos
 del guion oficial para que ALICE responda conforme al flujo y con el contenido
-esperado por negocio.*
+esperado por negocio._
 
 ### 6.1 Dónde viven los textos
 
@@ -646,14 +653,14 @@ esperado por negocio.*
 
 ```ts
 interface FlowMessage {
-  content: string;                 // texto base (guion oficial)
+  content: string; // texto base (guion oficial)
   imageUrl?: string;
   origin: 'OFFICIAL' | 'SUGGESTED'; // amarilla vs naranja
   variants?: {
-    reprompt?: string;             // reintento tras respuesta inválida
-    resume?: string;               // reorientación al retomar (§5.3)
-    reminder?: string;             // recordatorio 24h (§5.2)
-    timeoutClose?: string;         // cierre por inactividad 48h
+    reprompt?: string; // reintento tras respuesta inválida
+    resume?: string; // reorientación al retomar (§5.3)
+    reminder?: string; // recordatorio 24h (§5.2)
+    timeoutClose?: string; // cierre por inactividad 48h
   };
 }
 ```
@@ -664,20 +671,20 @@ por nodo concentra todas sus formas.
 
 ### 6.3 Catálogo de mensajes del flujo Au Pair (fuente en el JSON)
 
-| Categoría | Nodo / momento | Fuente en `chatbot_aupair_flujo.json` |
-| --- | --- | --- |
-| **Bienvenida** | `menu` (entrada) | `menuNote` (oficial) |
-| Contenido de paso | `n2` países / `n4` qué hace / `n5` proceso / `n6` aplicar | `n2Note`, `n4Note`, `n5Note`, `n6Note` (oficial) |
-| Contenido de paso | fichas `cAle`…`cSui` | `cAleNote`…`cSuiNote` (oficial) |
-| Confirmación | `n7` asesor asignado | `n7Note` (oficial) |
-| **Continuidad** | reprompt menú / país | `fbMenuNote`, `fbPaisNote` (sugerido) |
-| **Continuidad** | retoma / recordatorio 24h | sugerido nuevo (no está en el guion) |
-| **Cierre** | `despedida` | `despedidaNote` (sugerido) |
-| **Cierre** | handoff a humano | `handoffNote` (sugerido) |
-| **Error** | opción no reconocida | `fbMenuNote` / `fbPaisNote` (sugerido) |
-| **Error** | entrada no textual (audio/imagen/…) | Notas globales del `legend` — texto a redactar |
-| **Error** | 3 intentos -> asesor | reutiliza `handoffNote` |
-| Reglas globales | interceptores `asesor`/`menu`/`salir`, 24h/48h, 3 intentos | nodo `legend` |
+| Categoría         | Nodo / momento                                             | Fuente en `chatbot_aupair_flujo.json`            |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------ |
+| **Bienvenida**    | `menu` (entrada)                                           | `menuNote` (oficial)                             |
+| Contenido de paso | `n2` países / `n4` qué hace / `n5` proceso / `n6` aplicar  | `n2Note`, `n4Note`, `n5Note`, `n6Note` (oficial) |
+| Contenido de paso | fichas `cAle`…`cSui`                                       | `cAleNote`…`cSuiNote` (oficial)                  |
+| Confirmación      | `n7` asesor asignado                                       | `n7Note` (oficial)                               |
+| **Continuidad**   | reprompt menú / país                                       | `fbMenuNote`, `fbPaisNote` (sugerido)            |
+| **Continuidad**   | retoma / recordatorio 24h                                  | sugerido nuevo (no está en el guion)             |
+| **Cierre**        | `despedida`                                                | `despedidaNote` (sugerido)                       |
+| **Cierre**        | handoff a humano                                           | `handoffNote` (sugerido)                         |
+| **Error**         | opción no reconocida                                       | `fbMenuNote` / `fbPaisNote` (sugerido)           |
+| **Error**         | entrada no textual (audio/imagen/…)                        | Notas globales del `legend` — texto a redactar   |
+| **Error**         | 3 intentos -> asesor                                       | reutiliza `handoffNote`                          |
+| Reglas globales   | interceptores `asesor`/`menu`/`salir`, 24h/48h, 3 intentos | nodo `legend`                                    |
 
 Todo texto marcado "sugerido" o "a redactar" pasa por revisión de negocio antes
 de publicar. Los **textos literales** de cada mensaje están en el
@@ -713,28 +720,28 @@ de publicar. Los **textos literales** de cada mensaje están en el
 
 ### 6.6 Cobertura de los criterios de aceptación
 
-| Criterio | Mecanismo |
-| --- | --- |
-| Los textos del flujo quedan implementados | `content` inline por nodo en `flows/aupair.es-MX.flow.json` -> `alc_flow_definitions`, cargado al boot. |
+| Criterio                                     | Mecanismo                                                                                                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Los textos del flujo quedan implementados    | `content` inline por nodo en `flows/aupair.es-MX.flow.json` -> `alc_flow_definitions`, cargado al boot.                                                    |
 | Las respuestas corresponden al paso correcto | Cada `FlowMessage` está atado a su `nodeId`; el motor emite el `content` de `currentNodeId` (§4.1); test de emparejamiento 1:1 con las notas del diagrama. |
-| Se respeta el tono y contenido de negocio | Transcripción literal de notas amarillas + `origin`; gate de aprobación antes de `PUBLISHED`; guía de tono + test de fidelidad. |
-| Bienvenida, continuidad, cierre y error | Catálogo §6.3 con las cuatro categorías cubiertas y su fuente; `variants` (§6.2) para reprompt/resume/reminder/timeoutClose. |
+| Se respeta el tono y contenido de negocio    | Transcripción literal de notas amarillas + `origin`; gate de aprobación antes de `PUBLISHED`; guía de tono + test de fidelidad.                            |
+| Bienvenida, continuidad, cierre y error      | Catálogo §6.3 con las cuatro categorías cubiertas y su fuente; `variants` (§6.2) para reprompt/resume/reminder/timeoutClose.                               |
 
 ---
 
 ## 7. Impacto en el código existente
 
-| Archivo | Cambio |
-| --- | --- |
-| `prisma/schema.prisma` | + enums `FlowStateStatus`, `FlowDefinitionStatus`; + modelos `ConversationFlowState`, `FlowTransitionLog`, `FlowDefinition`; + relación en `Conversation`. Migración nueva. |
-| `src/modules/conversations/domain/conversation.entity.ts` | sin cambios (el estado de flujo es entidad aparte). |
-| `process-inbound-whatsapp-message.use-case.ts` | insertar resolución de flujo (sección 1.2). Sus specs con mocks se amplían. |
-| `src/modules/whatsapp/whatsapp.module.ts` / `src/app.module.ts` | importar `ConversationFlowModule`. |
-| `src/modules/persistence/...` | + repos Prisma/in-memory + mappers para las tablas nuevas (patrón existente). |
-| `src/shared/infrastructure/queue/queue.constants.ts` | + cola/known jobs `flow-maintenance`. |
-| `scripts/import-flow.ts` (nuevo) | transforma el export del diagrama al JSON canónico (§6.4). |
-| `flows/aupair.es-MX.flow.json` (nuevo) | definición versionada del guion oficial, revisable en PR. |
-| `docs/architecture.md`, `docs/adr/0005-conversation-flow-engine.md` (nuevo) | documentar la decisión y el diagrama. |
+| Archivo                                                                     | Cambio                                                                                                                                                                      |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prisma/schema.prisma`                                                      | + enums `FlowStateStatus`, `FlowDefinitionStatus`; + modelos `ConversationFlowState`, `FlowTransitionLog`, `FlowDefinition`; + relación en `Conversation`. Migración nueva. |
+| `src/modules/conversations/domain/conversation.entity.ts`                   | sin cambios (el estado de flujo es entidad aparte).                                                                                                                         |
+| `process-inbound-whatsapp-message.use-case.ts`                              | insertar resolución de flujo (sección 1.2). Sus specs con mocks se amplían.                                                                                                 |
+| `src/modules/whatsapp/whatsapp.module.ts` / `src/app.module.ts`             | importar `ConversationFlowModule`.                                                                                                                                          |
+| `src/modules/persistence/...`                                               | + repos Prisma/in-memory + mappers para las tablas nuevas (patrón existente).                                                                                               |
+| `src/shared/infrastructure/queue/queue.constants.ts`                        | + cola/known jobs `flow-maintenance`.                                                                                                                                       |
+| `scripts/import-flow.ts` (nuevo)                                            | transforma el export del diagrama al JSON canónico (§6.4).                                                                                                                  |
+| `flows/aupair.es-MX.flow.json` (nuevo)                                      | definición versionada del guion oficial, revisable en PR.                                                                                                                   |
+| `docs/architecture.md`, `docs/adr/0005-conversation-flow-engine.md` (nuevo) | documentar la decisión y el diagrama.                                                                                                                                       |
 
 Nada de esto rompe capas: `domain` sigue sin dependencias externas; los
 adaptadores nuevos solo implementan puertos.
@@ -789,6 +796,21 @@ adaptadores nuevos solo implementan puertos.
 6. **Almacén de contenido**: propuesta = inline en la definición (no tabla
    aparte de mensajes).
 
+### 10.1 Decisión confirmada: registro y perfilación APM desde ALICE
+
+Cuando la candidata elige aplicar, ALICE captura `name`, `age`, `phone`,
+`email`, `city`, `englishLevel` y el país seleccionado. Después llama al
+endpoint interno de APM `POST /api/v1/integrations/alice/leads`, autenticado con
+el encabezado `X-Alice-Integration-Secret` y una variable de entorno compartida
+(`ALICE_INTEGRATION_SECRET`).
+
+APM es el dueño del alta de leads: busca de forma idempotente por teléfono o
+correo, crea el lead si no existe, lo coloca en el buzón para reasignación
+automática y responde `{ leadId, status, profilingLink, assignment }`. Para no
+alterar la perfilación actual, `profilingLink` conserva la ruta existente
+`/perfilacion/{leadId}`. ALICE no accede a la base de datos de APM ni realiza la
+asignación de asesores.
+
 ---
 
 ## Apéndice A. Textos predefinidos que se enviarán
@@ -802,7 +824,7 @@ alterar el contenido ni la estructura. El texto de abajo es el que se carga en
 el gate editorial (§6.5).
 
 Convención WhatsApp: `[1]`, `[Aplicar]` se renderizan como texto; cuando la
-plataforma lo permita se mapean a *interactive list / buttons* sin cambiar el
+plataforma lo permita se mapean a _interactive list / buttons_ sin cambiar el
 copy.
 
 ### A.1 Bienvenida y menú
@@ -1024,9 +1046,18 @@ Se implementan como `globals` (§2.2), no como texto enviado:
     "closeAfter": "48h",
     "nonTextBehavior": "REPROMPT",
     "interceptors": [
-      { "match": ["asesor", "humano", "ayuda"], "action": { "kind": "HANDOFF", "reason": "USER_REQUEST" } },
-      { "match": ["menu", "inicio"], "action": { "kind": "GOTO", "nodeId": "menu", "keepVariables": true } },
-      { "match": ["salir", "cancelar"], "action": { "kind": "CLOSE", "nodeId": "despedida" } }
+      {
+        "match": ["asesor", "humano", "ayuda"],
+        "action": { "kind": "HANDOFF", "reason": "USER_REQUEST" }
+      },
+      {
+        "match": ["menu", "inicio"],
+        "action": { "kind": "GOTO", "nodeId": "menu", "keepVariables": true }
+      },
+      {
+        "match": ["salir", "cancelar"],
+        "action": { "kind": "CLOSE", "nodeId": "despedida" }
+      }
     ]
   },
   "nodes": [
@@ -1037,14 +1068,36 @@ Se implementan como `globals` (§2.2), no como texto enviado:
       "message": {
         "origin": "OFFICIAL",
         "content": "¡Hola! Te damos la bienvenida a Au Pair México.\nSer Au Pair es un reto personal increíble: vivir en el extranjero, perfeccionar un idioma, cuidar a los niños de una familia y reinventarte como persona. Avalados por IAPA y WYSE Travel Confederation.\n¿Cómo te gustaría comenzar tu aventura hoy?\n[1] Países disponibles\n[2] ¿Qué hace una Au Pair?\n[3] Proceso general de aplicación\n[4] ¡Ya quiero aplicar!",
-        "variants": { "reprompt": "No entendí tu respuesta. Por favor elige una opción válida del menú: 1, 2, 3 o 4." }
+        "variants": {
+          "reprompt": "No entendí tu respuesta. Por favor elige una opción válida del menú: 1, 2, 3 o 4."
+        }
       },
       "retry": { "max": 3, "onExhausted": "HANDOFF" },
       "transitions": [
-        { "id": "menu-1", "priority": 10, "to": "n2", "when": { "kind": "EQUALS", "value": "1" } },
-        { "id": "menu-2", "priority": 10, "to": "n4", "when": { "kind": "EQUALS", "value": "2" } },
-        { "id": "menu-3", "priority": 10, "to": "n5", "when": { "kind": "EQUALS", "value": "3" } },
-        { "id": "menu-4", "priority": 10, "to": "n6", "when": { "kind": "EQUALS", "value": "4" } }
+        {
+          "id": "menu-1",
+          "priority": 10,
+          "to": "n2",
+          "when": { "kind": "EQUALS", "value": "1" }
+        },
+        {
+          "id": "menu-2",
+          "priority": 10,
+          "to": "n4",
+          "when": { "kind": "EQUALS", "value": "2" }
+        },
+        {
+          "id": "menu-3",
+          "priority": 10,
+          "to": "n5",
+          "when": { "kind": "EQUALS", "value": "3" }
+        },
+        {
+          "id": "menu-4",
+          "priority": 10,
+          "to": "n6",
+          "when": { "kind": "EQUALS", "value": "4" }
+        }
       ]
     }
   ]

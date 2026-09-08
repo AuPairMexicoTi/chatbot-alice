@@ -13,9 +13,27 @@ import { GenerateConversationReplyUseCase } from './generate-conversation-reply.
 import { ProcessInboundWhatsAppMessageUseCase } from './process-inbound-whatsapp-message.use-case';
 import { QueueOutboundMessageUseCase } from './queue-outbound-message.use-case';
 import { RequestHumanHandoffUseCase } from './request-human-handoff.use-case';
+import { ConversationFlowStateService } from '@modules/conversation-flow/application/conversation-flow-state.service';
+import { ParsedWhatsAppWebhook } from '../../infrastructure/parsers/whatsapp-webhook.parser';
 
 describe('ProcessInboundWhatsAppMessageUseCase', () => {
-  it('processes a text message and uses the mock ai gateway', async () => {
+  const incomingMessage = (
+    externalId: string,
+    text: string,
+  ): ParsedWhatsAppWebhook => ({
+    externalId,
+    eventType: 'text',
+    contactExternalId: '5215550000001',
+    contactName: 'Cliente Demo',
+    from: '5215550000001',
+    messageId: externalId,
+    messageType: 'TEXT',
+    text,
+    locale: 'es-MX',
+    payload: {},
+  });
+
+  it('starts the Au Pair flow before invoking the AI fallback', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -64,10 +82,11 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const outbound = [...store.messages.values()].find(
       (message) => message.direction === 'OUTBOUND',
     );
-    expect(outbound?.text).toContain('ALICE');
+    expect(outbound?.text).toContain('Países Disponibles');
+    expect(store.aiRuns.size).toBe(0);
   });
 
-  it('uses an auto reply before calling ai', async () => {
+  it('gives the flow precedence over auto replies on a new conversation', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -94,7 +113,8 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
           title: 'Business hours',
           matchType: 'CONTAINS',
           patterns: ['horario'],
-          responseText: 'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
+          responseText:
+            'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
           responseImageUrl: null,
           priority: 10,
           isActive: true,
@@ -130,13 +150,11 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const outbound = [...store.messages.values()].find(
       (message) => message.direction === 'OUTBOUND',
     );
-    expect(outbound?.text).toBe(
-      'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
-    );
-    expect(outbound?.metadata.responseSource).toBe('AUTO_REPLY');
+    expect(outbound?.text).toContain('Países Disponibles');
+    expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
   });
 
-  it('queues an image auto reply when the rule includes a media url', async () => {
+  it('starts the flow even when an auto reply has media', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -200,10 +218,51 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       (message) => message.direction === 'OUTBOUND',
     );
 
-    expect(outbound?.type).toBe('IMAGE');
-    expect(outbound?.text).toBe('Bienvenida a Au Pair Mexico');
-    expect(outbound?.metadata.imageUrl).toBe(
-      'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
+    expect(outbound?.type).toBe('TEXT');
+    expect(outbound?.text).toContain('Países Disponibles');
+    expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
+  });
+
+  it('hands off immediately when a candidate chooses to apply', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
     );
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      ),
+      new QueueOutboundMessageUseCase(queue),
+      new ConversationFlowStateService(),
+      handoffUseCase,
+    );
+
+    for (const [externalId, text] of [
+      ['wamid.flow.1', 'Hola'],
+      ['wamid.flow.2', '4'],
+    ]) {
+      await useCase.execute(incomingMessage(externalId, text));
+    }
+
+    const handoffMessage = [...store.messages.values()].find(
+      (message) =>
+        message.direction === 'OUTBOUND' &&
+        message.text?.includes('Tu asesor asignado se pondrá en contacto'),
+    );
+    expect(handoffMessage).toBeDefined();
   });
 });

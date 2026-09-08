@@ -30,6 +30,10 @@ export class InMemoryAutoReplyRepository implements AutoReplyRepository {
       .sort((left, right) => right.priority - left.priority);
   }
 
+  async findByKey(key: string): Promise<AutoReply | null> {
+    return this.autoReplies.find((autoReply) => autoReply.key === key) ?? null;
+  }
+
   async create(input: CreateAutoReplyInput): Promise<AutoReply> {
     const autoReply: AutoReply = {
       id: randomUUID(),

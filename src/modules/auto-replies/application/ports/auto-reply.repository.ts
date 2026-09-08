@@ -15,6 +15,7 @@ export interface CreateAutoReplyInput {
 export interface AutoReplyRepository {
   listAll(): Promise<AutoReply[]>;
   listActiveByLocale(locale: string): Promise<AutoReply[]>;
+  findByKey(key: string): Promise<AutoReply | null>;
   create(input: CreateAutoReplyInput): Promise<AutoReply>;
 }
 

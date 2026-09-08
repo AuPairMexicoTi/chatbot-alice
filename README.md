@@ -58,6 +58,13 @@ AI provider selection:
 - `OPENAI_API_KEY` only when `AI_PROVIDER=openai`
 - `GEMINI_API_KEY` only when `AI_PROVIDER=gemini`
 
+CRM profiling-link integration:
+
+- `CRM_ALICE_LEADS_URL` is APM's internal `POST /api/v1/integrations/alice/leads` endpoint.
+- `CRM_ALICE_INTEGRATION_SECRET` must match APM's integration secret.
+- When a candidate completes the ALICE intake, APM creates or reuses the lead and returns that candidate's profiling link. ALICE sends that link before the human-advisor confirmation.
+- When the candidate requests an advisor, ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM creates an immediate WhatsApp follow-up in the assigned mailbox.
+
 ## Deterministic replies
 
 Predetermined replies can be resolved before AI.
@@ -67,6 +74,13 @@ Predetermined replies can be resolved before AI.
 - They can also be managed from Swagger with `GET /api/v1/auto-replies` and `POST /api/v1/auto-replies`
 - Matching runs before `AiGateway`
 - If an active rule matches, ALICE replies without consuming AI tokens
+
+## Conversation restart
+
+The guided Au Pair flow restarts from the main menu when a candidate sends a
+new message after `CONVERSATION_INACTIVITY_TIMEOUT_MINUTES` of inactivity
+(30 minutes by default), or after a flow has finished. Conversation history is
+kept; only the active flow state is restarted.
 
 ## WhatsApp outbound messages
 

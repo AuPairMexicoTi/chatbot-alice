@@ -18,7 +18,10 @@ import {
   WebhookVerifier,
 } from '@modules/whatsapp/application/ports/webhook-verifier';
 import { JsonValue } from '@shared/domain/types/json.type';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { WhatsAppWebhookDto } from './dto/whatsapp-webhook.dto';
 
+@ApiTags('WhatsApp Webhook')
 @Controller('webhooks/whatsapp')
 export class WhatsAppWebhookController {
   constructor(
@@ -43,6 +46,7 @@ export class WhatsAppWebhookController {
   }
 
   @Post()
+  @ApiBody({ type: WhatsAppWebhookDto })
   @HttpCode(200)
   async receive(
     @Req() request: Request & { rawBody?: Buffer },

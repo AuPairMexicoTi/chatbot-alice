@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AI_RUN_REPOSITORY } from '@modules/ai/application/ports/ai-run.repository';
 import { CHATBOT_TOOLS as CHATBOT_TOOLS_TOKEN } from '@modules/ai/application/ports/chatbot-tool';
 import { AutoRepliesModule } from '@modules/auto-replies/auto-replies.module';
+import { ConversationFlowModule } from '@modules/conversation-flow/conversation-flow.module';
 import { ResolveAutoReplyUseCase } from '@modules/auto-replies/application/use-cases/resolve-auto-reply.use-case';
 import { CONTACT_REPOSITORY } from '@modules/contacts/application/ports/contact.repository';
 import { CONVERSATION_REPOSITORY } from '@modules/conversations/application/ports/conversation.repository';
@@ -42,13 +43,22 @@ import { InMemoryHandoffRepository } from '@modules/persistence/infrastructure/r
 import { InMemoryMessageRepository } from '@modules/persistence/infrastructure/repositories/in-memory-message.repository';
 import { InMemoryStore } from '@modules/persistence/infrastructure/repositories/in-memory.store';
 import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastructure/repositories/in-memory-webhook-event.repository';
+import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
+import { PrismaContactRepository } from '@modules/persistence/infrastructure/repositories/prisma-contact.repository';
+import { PrismaConversationRepository } from '@modules/persistence/infrastructure/repositories/prisma-conversation.repository';
+import { PrismaMessageRepository } from '@modules/persistence/infrastructure/repositories/prisma-message.repository';
+import { PrismaWebhookEventRepository } from '@modules/persistence/infrastructure/repositories/prisma-webhook-event.repository';
+import { ConversationInactivityService } from './application/services/conversation-inactivity.service';
+import { ConversationInactivityProcessor } from './infrastructure/processors/conversation-inactivity.processor';
 
 @Module({
   imports: [
     AutoRepliesModule,
+    ConversationFlowModule,
     BullModule.registerQueue(
       { name: 'whatsapp-inbound' },
       { name: 'whatsapp-outbound' },
+      { name: 'conversation-inactivity' },
     ),
   ],
   providers: [
@@ -57,6 +67,10 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     InMemoryConversationRepository,
     InMemoryMessageRepository,
     InMemoryWebhookEventRepository,
+    PrismaContactRepository,
+    PrismaConversationRepository,
+    PrismaMessageRepository,
+    PrismaWebhookEventRepository,
     InMemoryAiRunRepository,
     InMemoryHandoffRepository,
     MockWhatsAppGateway,
@@ -68,27 +82,77 @@ import { InMemoryWebhookEventRepository } from '@modules/persistence/infrastruct
     WhatsAppWebhookParser,
     WhatsAppInboundProcessor,
     WhatsAppOutboundProcessor,
+    ConversationInactivityProcessor,
     GenerateConversationReplyUseCase,
     ProcessInboundWhatsAppMessageUseCase,
+    ConversationInactivityService,
     QueueOutboundMessageUseCase,
     SendOutboundWhatsAppMessageUseCase,
     RequestHumanHandoffUseCase,
     RequestHumanHandoffTool,
     {
       provide: CONTACT_REPOSITORY,
-      useExisting: InMemoryContactRepository,
+      inject: [
+        ConfigService,
+        InMemoryContactRepository,
+        PrismaContactRepository,
+      ],
+      useFactory: (
+        configService: ConfigService,
+        inMemoryRepository: InMemoryContactRepository,
+        prismaRepository: PrismaContactRepository,
+      ) =>
+        configService.getOrThrow<string>('app.nodeEnv') === 'test'
+          ? inMemoryRepository
+          : prismaRepository,
     },
     {
       provide: CONVERSATION_REPOSITORY,
-      useExisting: InMemoryConversationRepository,
+      inject: [
+        ConfigService,
+        InMemoryConversationRepository,
+        PrismaConversationRepository,
+      ],
+      useFactory: (
+        configService: ConfigService,
+        inMemoryRepository: InMemoryConversationRepository,
+        prismaRepository: PrismaConversationRepository,
+      ) =>
+        configService.getOrThrow<string>('app.nodeEnv') === 'test'
+          ? inMemoryRepository
+          : prismaRepository,
     },
     {
       provide: MESSAGE_REPOSITORY,
-      useExisting: InMemoryMessageRepository,
+      inject: [
+        ConfigService,
+        InMemoryMessageRepository,
+        PrismaMessageRepository,
+      ],
+      useFactory: (
+        configService: ConfigService,
+        inMemoryRepository: InMemoryMessageRepository,
+        prismaRepository: PrismaMessageRepository,
+      ) =>
+        configService.getOrThrow<string>('app.nodeEnv') === 'test'
+          ? inMemoryRepository
+          : prismaRepository,
     },
     {
       provide: WEBHOOK_EVENT_REPOSITORY,
-      useExisting: InMemoryWebhookEventRepository,
+      inject: [
+        ConfigService,
+        InMemoryWebhookEventRepository,
+        PrismaWebhookEventRepository,
+      ],
+      useFactory: (
+        configService: ConfigService,
+        inMemoryRepository: InMemoryWebhookEventRepository,
+        prismaRepository: PrismaWebhookEventRepository,
+      ) =>
+        configService.getOrThrow<string>('app.nodeEnv') === 'test'
+          ? inMemoryRepository
+          : prismaRepository,
     },
     {
       provide: AI_RUN_REPOSITORY,

@@ -87,11 +87,26 @@ model Conversation {
   messages   Message[]
   aiRuns     AiRun[]
   handoffs   Handoff[]
+  flowState  ConversationFlowState?
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
   @@index([contactId, status], map: "idx_alc_conversations_contact_status")
   @@map("alc_conversations")
+}
+
+model ConversationFlowState {
+  id             String       @id @default(uuid())
+  conversationId String       @unique @map("conversation_id")
+  nodeId         String       @map("node_id")
+  status         String
+  attempts       Int          @default(0)
+  variables      Json         @default("{}")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@map("alc_conversation_flow_states")
 }
 
 model Message {

@@ -15,6 +15,7 @@ import { RootModule } from '@modules/root/root.module';
 import { HealthModule } from '@modules/health/health.module';
 import { AutoRepliesModule } from '@modules/auto-replies/auto-replies.module';
 import { WebhooksModule } from '@modules/webhooks/webhooks.module';
+import { ConversationFlowModule } from '@modules/conversation-flow/conversation-flow.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { WebhooksModule } from '@modules/webhooks/webhooks.module';
     HealthModule,
     AutoRepliesModule,
     WebhooksModule,
+    ConversationFlowModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
