@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   CONTACT_REPOSITORY,
   ContactRepository,
@@ -41,6 +42,7 @@ export class SendWelcomeMessageUseCase {
     @Inject(AUTO_REPLY_REPOSITORY)
     private readonly autoReplyRepository: AutoReplyRepository,
     private readonly queueOutboundMessageUseCase: QueueOutboundMessageUseCase,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(
@@ -73,7 +75,9 @@ export class SendWelcomeMessageUseCase {
     const message = await this.messageRepository.create({
       conversationId: conversation.id,
       direction: 'OUTBOUND',
-      type: template.responseImageUrl ? 'IMAGE' : 'TEXT',
+      type: this.getWelcomeImageUrl(template.responseImageUrl)
+        ? 'IMAGE'
+        : 'TEXT',
       providerMessageId: null,
       text: this.applyTemplate(template.responseText, input.name),
       status: 'QUEUED',
@@ -81,8 +85,8 @@ export class SendWelcomeMessageUseCase {
         responseSource: 'CRM_WELCOME',
         autoReplyId: template.id,
         autoReplyKey: template.key,
-        ...(template.responseImageUrl
-          ? { imageUrl: template.responseImageUrl }
+        ...(this.getWelcomeImageUrl(template.responseImageUrl)
+          ? { imageUrl: this.getWelcomeImageUrl(template.responseImageUrl) }
           : {}),
       },
     });
@@ -95,5 +99,14 @@ export class SendWelcomeMessageUseCase {
   private applyTemplate(text: string, name: string | null): string {
     const safeName = name && name.trim().length > 0 ? name.trim() : '';
     return text.replace(/\{\{\s*name\s*\}\}/gi, safeName);
+  }
+
+  private getWelcomeImageUrl(templateImageUrl: string | null): string | null {
+    const publicBaseUrl = this.configService
+      .get<string>('media.publicBaseUrl', '')
+      .replace(/\/$/u, '');
+    return publicBaseUrl
+      ? `${publicBaseUrl}/api/v1/assets/principal.jpeg`
+      : templateImageUrl;
   }
 }

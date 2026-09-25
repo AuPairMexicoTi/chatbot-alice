@@ -1,0 +1,20 @@
+Asunto: Propuesta de VPS para ALICE y un CRM
+
+Hola,
+
+Para alojar el chatbot ALICE junto con un CRM, propongo contratar el plan VPS KVM 2 de Hostinger, con las siguientes características:
+
+- 2 núcleos de vCPU
+- 8 GB de RAM
+- 100 GB de almacenamiento NVMe
+- 8 TB de ancho de banda
+- Servidor ubicado en Estados Unidos
+- Periodo contratado: 12 meses
+
+El costo total es de MXN 2,111.88 por los 12 meses, equivalente a aproximadamente MXN 175.99 mensuales.
+
+La renovación posterior sería de MXN 311.99 mensuales. El respaldo automático diario no se contrataría, ya que podemos configurar respaldos propios del servidor.
+
+Este VPS sería suficiente para comenzar con ALICE y un solo CRM, dejando la posibilidad de actualizarlo posteriormente si aumenta el tráfico.
+
+Saludos.

@@ -65,6 +65,12 @@ CRM profiling-link integration:
 - When a candidate completes the ALICE intake, APM creates or reuses the lead and returns that candidate's profiling link. ALICE sends that link before the human-advisor confirmation.
 - When the candidate requests an advisor, ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM creates an immediate WhatsApp follow-up in the assigned mailbox.
 
+WhatsApp images:
+
+- `CHATBOT_PUBLIC_BASE_URL` must be the public HTTPS origin of this backend (for example, `https://alice.example.com`). Meta downloads images from `/api/v1/assets/<filename>`.
+- The initial menu and lead welcome message use `principal.jpeg`; country cards attach the available country image for Germany, Belgium, United States, France, and Italy.
+- Image files live in `public/images`. Meta must be able to reach the configured URL without authentication.
+
 ## Deterministic replies
 
 Predetermined replies can be resolved before AI.

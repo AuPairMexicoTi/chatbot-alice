@@ -25,6 +25,19 @@ describe('ConversationFlowEngine', () => {
     expect(result.state.variables.countryInterest).toBe('Alemania');
   });
 
+  it('shows the welcome menu again when greeting from the main menu', () => {
+    const result = engine.advance(
+      aupairFlowDefinition,
+      engine.start(aupairFlowDefinition).state,
+      text('Hola'),
+    );
+
+    expect(result.state.nodeId).toBe('menu');
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]).toContain('Te damos la bienvenida');
+    expect(result.messages[0]).not.toContain('No entendí');
+  });
+
   it('hands off when a candidate wants to apply from a country information card', () => {
     const state = {
       ...engine.start(aupairFlowDefinition).state,

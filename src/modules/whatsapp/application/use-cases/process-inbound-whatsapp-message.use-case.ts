@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   CONTACT_REPOSITORY,
   ContactRepository,
@@ -42,6 +43,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
     @Inject(APM_HANDOFF_PORT) private readonly apmHandoffPort?: ApmHandoffPort,
     @Optional()
     private readonly conversationInactivityService?: ConversationInactivityService,
+    private readonly configService?: ConfigService,
   ) {}
 
   async execute(payload: ParsedWhatsAppWebhook): Promise<void> {
@@ -102,17 +104,19 @@ export class ProcessInboundWhatsAppMessageUseCase {
       await this.conversationInactivityService?.schedule(conversation.id);
     else await this.conversationInactivityService?.cancel(conversation.id);
     for (const text of flowResult.messages) {
-      const hasAdvisorImage = Boolean(advisor?.imageUrl);
+      const flowImageUrl = this.getFlowImageUrl(flowResult.state.nodeId);
+      const imageUrl = advisor?.imageUrl ?? flowImageUrl;
+      const hasImage = Boolean(imageUrl);
       const outboundMessage = await this.messageRepository.create({
         conversationId: conversation.id,
         direction: 'OUTBOUND',
-        type: hasAdvisorImage ? 'IMAGE' : 'TEXT',
+        type: hasImage ? 'IMAGE' : 'TEXT',
         providerMessageId: null,
         text,
         status: 'QUEUED',
         metadata: {
           responseSource: 'CONVERSATION_FLOW',
-          ...(hasAdvisorImage ? { imageUrl: advisor?.imageUrl ?? null } : {}),
+          ...(hasImage ? { imageUrl } : {}),
         },
       });
       await this.queueOutboundMessageUseCase.execute(outboundMessage.id);
@@ -165,7 +169,27 @@ export class ProcessInboundWhatsAppMessageUseCase {
   private advisorMessage(advisor: ApmAdvisor): string {
     if (advisor.isMailbox)
       return '¡Excelente! 🙌✨ Un asesor se pondrá en contacto contigo por este medio o por llamada telefónica. 📞\n\n¡Activa tus notificaciones! 🔔💖';
-    const link = advisor.whatsappLink ? `\n\n👉 ${advisor.whatsappLink}` : '';
+    const link = advisor.whatsappLink
+      ? `\n\n📲 Contáctalo aquí, por favor:\n👉 ${advisor.whatsappLink}`
+      : '';
     return `¡Excelente! 🙌✨ Tu asesor asignado es *${advisor.name ?? 'tu asesor'}*.\n\nSe pondrá en contacto contigo por este medio o por llamada telefónica. 📞${link}\n\n¡Activa tus notificaciones! 🔔💖`;
+  }
+
+  private getFlowImageUrl(nodeId: string): string | null {
+    const assets: Record<string, string> = {
+      menu: 'principal.jpeg',
+      germany: 'alemania.jpeg',
+      belgium: 'belgica.jpeg',
+      usa: 'estados-unidos.jpeg',
+      france: 'francia.jpeg',
+      italy: 'italia.jpeg',
+    };
+    const filename = assets[nodeId];
+    const publicBaseUrl = this.configService
+      ?.get<string>('media.publicBaseUrl', '')
+      .replace(/\/$/u, '');
+    return filename && publicBaseUrl
+      ? `${publicBaseUrl}/api/v1/assets/${filename}`
+      : null;
   }
 }

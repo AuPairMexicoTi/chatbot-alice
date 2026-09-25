@@ -37,6 +37,23 @@ export class ConversationFlowEngine {
       ]);
     }
     const normalized = normalize(input.text);
+    if (
+      state.nodeId === definition.entryNodeId &&
+      [
+        'hola',
+        'holaa',
+        'buenas',
+        'buenos dias',
+        'buenas tardes',
+        'buenas noches',
+      ].includes(normalized)
+    ) {
+      return this.enter(definition, {
+        ...state,
+        nodeId: definition.entryNodeId,
+        attempts: 0,
+      });
+    }
     if (['asesor', 'humano', 'ayuda'].includes(normalized))
       return this.enter(definition, {
         ...state,

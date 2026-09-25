@@ -9,6 +9,7 @@ export const envValidationSchema = Joi.object({
   APP_PORT: Joi.number().port().required(),
   APP_PREFIX: Joi.string().required(),
   APP_CORS_ORIGINS: Joi.string().allow('').required(),
+  CHATBOT_PUBLIC_BASE_URL: Joi.string().uri().allow('').default(''),
   APP_BODY_LIMIT: Joi.string().required(),
   LOG_LEVEL: Joi.string()
     .valid('silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace')

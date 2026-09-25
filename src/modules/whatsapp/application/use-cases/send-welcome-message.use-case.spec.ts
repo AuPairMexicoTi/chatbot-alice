@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { InMemoryContactRepository } from '@modules/persistence/infrastructure/repositories/in-memory-contact.repository';
 import { InMemoryConversationRepository } from '@modules/persistence/infrastructure/repositories/in-memory-conversation.repository';
 import { InMemoryMessageRepository } from '@modules/persistence/infrastructure/repositories/in-memory-message.repository';
@@ -29,6 +30,7 @@ describe('SendWelcomeMessageUseCase', () => {
       messageRepository,
       autoReplyRepository,
       queueOutboundMessageUseCase,
+      new ConfigService({ CHATBOT_PUBLIC_BASE_URL: '' }),
     );
 
     return {

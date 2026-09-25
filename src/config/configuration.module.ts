@@ -4,6 +4,7 @@ import { aiConfig } from './ai.config';
 import { appConfig } from './app.config';
 import { crmConfig } from './crm.config';
 import { conversationFlowConfig } from './conversation-flow.config';
+import { mediaConfig } from './media.config';
 import { databaseConfig } from './database.config';
 import { envValidationSchema } from './env.validation';
 import { redisConfig } from './redis.config';
@@ -30,6 +31,7 @@ const createEnvFilePaths = (nodeEnv: string): string[] => [
         aiConfig,
         crmConfig,
         conversationFlowConfig,
+        mediaConfig,
       ],
       validationSchema: envValidationSchema,
     }),
