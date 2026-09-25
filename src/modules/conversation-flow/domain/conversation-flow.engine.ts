@@ -83,10 +83,12 @@ export class ConversationFlowEngine {
       const countryInterestByNode: Record<string, string> = {
         germany: 'Alemania',
         belgium: 'Bélgica',
+        denmark: 'Dinamarca',
         usa: 'Estados Unidos',
         france: 'Francia',
         italy: 'Italia',
         netherlands: 'Países Bajos',
+        sweden: 'Suecia',
         switzerland: 'Suiza',
       };
       return this.enter(definition, {

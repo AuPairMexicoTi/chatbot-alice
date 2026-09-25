@@ -21,15 +21,17 @@ export const aupairFlowDefinition: FlowDefinition = {
     countries: {
       id: 'countries',
       content:
-        '¡Excelente elección! 🎉 Contamos con 7 destinos increíbles en Europa 🇪🇺 y Norteamérica 🇺🇸 para nuestros programas. 🗺️✨\n\nElige el país que más te llame la atención para ver todos sus detalles 🔎, requisitos 📝 y beneficios 🎁:\n\n1️⃣ 🇩🇪 Alemania 🥨\n2️⃣ 🇧🇪 Bélgica 🍫\n3️⃣ 🇺🇸 Estados Unidos 🗽\n4️⃣ 🇫🇷 Francia 🥐\n5️⃣ 🇮🇹 Italia 🍕\n6️⃣ 🇳🇱 Países Bajos 🌷\n7️⃣ 🇨🇭 Suiza 🏔️',
+        '¡Excelente elección! 🎉 Contamos con 9 destinos increíbles en Europa 🇪🇺 y Norteamérica 🇺🇸 para nuestros programas. 🗺️✨\n\nElige el país que más te llame la atención para ver todos sus detalles 🔎, requisitos 📝 y beneficios 🎁:\n\n1️⃣ 🇩🇪 Alemania 🥨\n2️⃣ 🇧🇪 Bélgica 🍫\n3️⃣ 🇩🇰 Dinamarca 🚲\n4️⃣ 🇺🇸 Estados Unidos 🗽\n5️⃣ 🇫🇷 Francia 🥐\n6️⃣ 🇮🇹 Italia 🍕\n7️⃣ 🇳🇱 Países Bajos 🌷\n8️⃣ 🇸🇪 Suecia ❄️\n9️⃣ 🇨🇭 Suiza 🏔️',
       options: {
         '1|1️⃣|alemania': 'germany',
         '2|2️⃣|bélgica|belgica': 'belgium',
-        '3|3️⃣|estados unidos|usa|eeuu': 'usa',
-        '4|4️⃣|francia': 'france',
-        '5|5️⃣|italia': 'italy',
-        '6|6️⃣|países bajos|paises bajos|holanda': 'netherlands',
-        '7|7️⃣|suiza': 'switzerland',
+        '3|3️⃣|dinamarca': 'denmark',
+        '4|4️⃣|estados unidos|usa|eeuu': 'usa',
+        '5|5️⃣|francia': 'france',
+        '6|6️⃣|italia': 'italy',
+        '7|7️⃣|países bajos|paises bajos|holanda': 'netherlands',
+        '8|8️⃣|suecia': 'sweden',
+        '9|9️⃣|suiza': 'switzerland',
       },
     },
     germany: {
@@ -97,6 +99,30 @@ export const aupairFlowDefinition: FlowDefinition = {
       content: country(
         'Países Bajos',
         '¡Recorre hermosos paisajes en bicicleta en Países Bajos! 🇳🇱🌷🚲🧀\n\n⏱️ Duración: 12 meses | 30 horas semanales ⏰.\n🎁 Beneficios: Alimentación 🍲 y alojamiento 🏡, apoyo económico de €320 a €340 EUR mensuales 💶, seguro de gastos médicos 🏥, 1.5 días de descanso a la semana 🛋️, 2 semanas de vacaciones 🏖️, certificado Au Pair 📜 y supervisión 🤝.\n📋 Requisitos: Mujer soltera sin hijos 👧 (18-25 años) 🎂.',
+      ),
+      options: {
+        '1|1️⃣|aplicar': 'handoff',
+        '2|2️⃣|menú|menu|regresar': 'menu',
+        '3|3️⃣|otros países|otros paises|países|paises': 'countries',
+      },
+    },
+    denmark: {
+      id: 'denmark',
+      content: country(
+        'Dinamarca',
+        '¡Vive una experiencia inolvidable en Dinamarca! 🇩🇰🏰🚲\n\n⏱️ Duración: 24 meses | 30 horas semanales ⏰.\n🎁 Beneficios: Alimentación y alojamiento 🏡, apoyo económico de 5,277 DKK al mes 💰, descanso de 1.5 días semanales 🛋️, vacaciones de 4 semanas al año (periodo de 2 semanas) 🏖️, certificado de Au Pair 📜, supervisión durante tu estancia en el extranjero 🤝, documentación y asesoría para el trámite de la visa 📋, apoyo para curso de idioma danés 📚 e incluye vuelo de regreso* ✈️ (aplican restricciones).\n📋 Requisitos: Soltera(o) y sin hijos 👧🧑, entre 18 y 29 años, certificado de preparatoria 🎓, saber manejar estándar 🚗, inglés conversacional B1 🗣️, no fumar 🚭 y no tener brackets.',
+      ),
+      options: {
+        '1|1️⃣|aplicar': 'handoff',
+        '2|2️⃣|menú|menu|regresar': 'menu',
+        '3|3️⃣|otros países|otros paises|países|paises': 'countries',
+      },
+    },
+    sweden: {
+      id: 'sweden',
+      content: country(
+        'Suecia',
+        '¡Disfruta de una gran aventura en Suecia! 🇸🇪❄️✨\n\n⏱️ Duración: 12 meses | 25 horas semanales ⏰.\n🎁 Beneficios: Alimentación y alojamiento 🏡, apoyo económico de 7,868 SEK al mes 💰, descanso de 1 día semanal 🛋️, vacaciones de 2 semanas al año 🏖️, certificado de Au Pair 📜, supervisión durante tu estancia en el extranjero 🤝, documentación y asesoría para el trámite de la visa 📋, apoyo para curso de idioma sueco 📚 e incluye vuelo de regreso* ✈️ (aplican restricciones).\n📋 Requisitos: Soltera(o) y sin hijos 👧🧑, entre 18 y 30 años, certificado de preparatoria 🎓, saber manejar estándar 🚗, inglés conversacional B1 🗣️, no fumar 🚭 y no tener brackets.',
       ),
       options: {
         '1|1️⃣|aplicar': 'handoff',

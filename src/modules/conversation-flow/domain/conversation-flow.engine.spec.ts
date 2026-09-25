@@ -38,6 +38,31 @@ describe('ConversationFlowEngine', () => {
     expect(result.messages[0]).not.toContain('No entendí');
   });
 
+  it('routes Denmark and Sweden selections to their country cards', () => {
+    const menu = engine.start(aupairFlowDefinition);
+    const countries = engine.advance(
+      aupairFlowDefinition,
+      menu.state,
+      text('1'),
+    );
+
+    const denmark = engine.advance(
+      aupairFlowDefinition,
+      countries.state,
+      text('3'),
+    );
+    expect(denmark.state.nodeId).toBe('denmark');
+    expect(denmark.messages[0]).toContain('Dinamarca');
+
+    const sweden = engine.advance(
+      aupairFlowDefinition,
+      countries.state,
+      text('8'),
+    );
+    expect(sweden.state.nodeId).toBe('sweden');
+    expect(sweden.messages[0]).toContain('Suecia');
+  });
+
   it('hands off when a candidate wants to apply from a country information card', () => {
     const state = {
       ...engine.start(aupairFlowDefinition).state,
