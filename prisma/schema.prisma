@@ -212,3 +212,28 @@ model AutoReply {
   @@index([isActive, locale, priority], map: "idx_alc_auto_replies_active_locale_priority")
   @@map("alc_auto_replies")
 }
+
+enum FlowNodeTerminal {
+  HANDOFF
+  CLOSED
+}
+
+enum FlowNodeCapture {
+  name
+  age
+  email
+  city
+  englishLevel
+}
+
+model FlowNode {
+  id        String            @id
+  content   String
+  options   Json?
+  capture   FlowNodeCapture?
+  terminal  FlowNodeTerminal?
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  @@map("alc_flow_nodes")
+}
