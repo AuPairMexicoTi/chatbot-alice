@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   AutoReplyRepository,
   CreateAutoReplyInput,
+  UpdateAutoReplyInput,
 } from '../../application/ports/auto-reply.repository';
 import { AutoReply } from '../../domain/auto-reply.entity';
 
@@ -34,6 +35,10 @@ export class InMemoryAutoReplyRepository implements AutoReplyRepository {
     return this.autoReplies.find((autoReply) => autoReply.key === key) ?? null;
   }
 
+  async findById(id: string): Promise<AutoReply | null> {
+    return this.autoReplies.find((autoReply) => autoReply.id === id) ?? null;
+  }
+
   async create(input: CreateAutoReplyInput): Promise<AutoReply> {
     const autoReply: AutoReply = {
       id: randomUUID(),
@@ -53,5 +58,45 @@ export class InMemoryAutoReplyRepository implements AutoReplyRepository {
     this.autoReplies.push(autoReply);
 
     return autoReply;
+  }
+
+  async update(id: string, input: UpdateAutoReplyInput): Promise<AutoReply> {
+    const index = this.autoReplies.findIndex(
+      (autoReply) => autoReply.id === id,
+    );
+    if (index === -1) {
+      throw new Error(`AutoReply with id ${id} not found`);
+    }
+
+    const existing = this.autoReplies[index];
+    const updated: AutoReply = {
+      ...existing,
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.matchType !== undefined && { matchType: input.matchType }),
+      ...(input.patterns !== undefined && { patterns: input.patterns }),
+      ...(input.responseText !== undefined && {
+        responseText: input.responseText,
+      }),
+      ...(input.responseImageUrl !== undefined && {
+        responseImageUrl: input.responseImageUrl,
+      }),
+      ...(input.priority !== undefined && { priority: input.priority }),
+      ...(input.isActive !== undefined && { isActive: input.isActive }),
+      ...(input.locale !== undefined && { locale: input.locale }),
+      updatedAt: new Date(),
+    };
+
+    this.autoReplies[index] = updated;
+
+    return updated;
+  }
+
+  async delete(id: string): Promise<void> {
+    const index = this.autoReplies.findIndex(
+      (autoReply) => autoReply.id === id,
+    );
+    if (index !== -1) {
+      this.autoReplies.splice(index, 1);
+    }
   }
 }
