@@ -1,5 +1,4 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   CONTACT_REPOSITORY,
   ContactRepository,
@@ -43,7 +42,6 @@ export class ProcessInboundWhatsAppMessageUseCase {
     @Inject(APM_HANDOFF_PORT) private readonly apmHandoffPort?: ApmHandoffPort,
     @Optional()
     private readonly conversationInactivityService?: ConversationInactivityService,
-    private readonly configService?: ConfigService,
   ) {}
 
   async execute(payload: ParsedWhatsAppWebhook): Promise<void> {
@@ -104,8 +102,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
       await this.conversationInactivityService?.schedule(conversation.id);
     else await this.conversationInactivityService?.cancel(conversation.id);
     for (const text of flowResult.messages) {
-      const flowImageUrl = this.getFlowImageUrl(flowResult.state.nodeId);
-      const imageUrl = advisor?.imageUrl ?? flowImageUrl;
+      const imageUrl = advisor?.imageUrl ?? flowResult.imageUrl ?? null;
       const hasImage = Boolean(imageUrl);
       const outboundMessage = await this.messageRepository.create({
         conversationId: conversation.id,
@@ -173,23 +170,5 @@ export class ProcessInboundWhatsAppMessageUseCase {
       ? `\n\n📲 Contáctalo aquí, por favor:\n👉 ${advisor.whatsappLink}`
       : '';
     return `¡Excelente! 🙌✨ Tu asesor asignado es *${advisor.name ?? 'tu asesor'}*.\n\nSe pondrá en contacto contigo por este medio o por llamada telefónica. 📞${link}\n\n¡Activa tus notificaciones! 🔔💖`;
-  }
-
-  private getFlowImageUrl(nodeId: string): string | null {
-    const assets: Record<string, string> = {
-      menu: 'principal.jpeg',
-      germany: 'alemania.jpeg',
-      belgium: 'belgica.jpeg',
-      usa: 'estados-unidos.jpeg',
-      france: 'francia.jpeg',
-      italy: 'italia.jpeg',
-    };
-    const filename = assets[nodeId];
-    const publicBaseUrl = this.configService
-      ?.get<string>('media.publicBaseUrl', '')
-      .replace(/\/$/u, '');
-    return filename && publicBaseUrl
-      ? `${publicBaseUrl}/api/v1/assets/${filename}`
-      : null;
   }
 }

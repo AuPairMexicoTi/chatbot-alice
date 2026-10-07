@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMinSize,
   IsArray,
@@ -18,53 +18,50 @@ const autoReplyMatchTypes = {
   REGEX: 'REGEX',
 } as const;
 
-export class CreateAutoReplyDto {
-  @ApiProperty({
-    example: 'welcome_aupair_mexico',
-  })
-  @IsString()
-  @MaxLength(120)
-  key!: string;
-
-  @ApiProperty({
+export class UpdateAutoReplyDto {
+  @ApiPropertyOptional({
     example: 'Bienvenida Au Pair Mexico',
   })
+  @IsOptional()
   @IsString()
   @MaxLength(160)
-  title!: string;
+  title?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: Object.values(autoReplyMatchTypes),
     example: 'CONTAINS',
   })
+  @IsOptional()
   @IsEnum(autoReplyMatchTypes)
-  matchType!: 'EXACT' | 'CONTAINS' | 'REGEX';
+  matchType?: 'EXACT' | 'CONTAINS' | 'REGEX';
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: [String],
     example: ['hola', 'informes', 'au pair'],
   })
+  @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  patterns!: string[];
+  patterns?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Hola, bienvenida a Au Pair Mexico.',
   })
+  @IsOptional()
   @IsString()
-  responseText!: string;
+  responseText?: string;
 
   @ApiPropertyOptional({
     example: 'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
+    nullable: true,
   })
   @IsOptional()
   @IsUrl({ require_tld: false })
-  responseImageUrl?: string;
+  responseImageUrl?: string | null;
 
   @ApiPropertyOptional({
     example: 200,
-    default: 0,
   })
   @IsOptional()
   @IsInt()
@@ -73,7 +70,6 @@ export class CreateAutoReplyDto {
 
   @ApiPropertyOptional({
     example: true,
-    default: true,
   })
   @IsOptional()
   @IsBoolean()

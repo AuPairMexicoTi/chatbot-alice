@@ -5,7 +5,7 @@ import { SendWelcomeMessageUseCase } from '@modules/whatsapp/application/use-cas
 import { ReceiveWhatsAppWebhookUseCase } from './application/use-cases/receive-whatsapp-webhook.use-case';
 import { WhatsAppWebhookController } from './presentation/whatsapp-webhook.controller';
 import { CrmLeadWebhookController } from './presentation/crm-lead-webhook.controller';
-import { CrmSecretGuard } from './presentation/guards/crm-secret.guard';
+import { CrmSecretGuard } from '@shared/presentation/guards/crm-secret.guard';
 
 @Module({
   imports: [WhatsAppModule, AutoRepliesModule],

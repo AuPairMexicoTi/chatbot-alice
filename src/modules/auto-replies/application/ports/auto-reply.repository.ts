@@ -12,11 +12,25 @@ export interface CreateAutoReplyInput {
   locale: string | null;
 }
 
+export interface UpdateAutoReplyInput {
+  title?: string;
+  matchType?: 'EXACT' | 'CONTAINS' | 'REGEX';
+  patterns?: string[];
+  responseText?: string;
+  responseImageUrl?: string | null;
+  priority?: number;
+  isActive?: boolean;
+  locale?: string | null;
+}
+
 export interface AutoReplyRepository {
   listAll(): Promise<AutoReply[]>;
   listActiveByLocale(locale: string): Promise<AutoReply[]>;
   findByKey(key: string): Promise<AutoReply | null>;
+  findById(id: string): Promise<AutoReply | null>;
   create(input: CreateAutoReplyInput): Promise<AutoReply>;
+  update(id: string, input: UpdateAutoReplyInput): Promise<AutoReply>;
+  delete(id: string): Promise<void>;
 }
 
 export const AUTO_REPLY_REPOSITORY = Symbol('AUTO_REPLY_REPOSITORY');
