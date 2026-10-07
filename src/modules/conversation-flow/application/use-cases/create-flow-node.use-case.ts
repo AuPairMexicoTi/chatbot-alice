@@ -9,6 +9,10 @@ import { ApplicationError } from '@shared/domain/errors/application.error';
 
 const FLOW_NODE_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 
+// Crea un nodo "borrador": solo id + texto + imagen, sin options/capture/
+// terminal. El nodo queda guardado pero inalcanzable para el bot hasta que
+// alguien de TI lo agregue a aupair-flow.definition.ts y lo conecte desde
+// las options de otro nodo — crear aquí nunca altera el flujo en vivo.
 @Injectable()
 export class CreateFlowNodeUseCase {
   constructor(
@@ -20,7 +24,7 @@ export class CreateFlowNodeUseCase {
     if (!FLOW_NODE_ID_PATTERN.test(input.id)) {
       throw new ApplicationError(
         'FLOW_NODE_INVALID_ID',
-        'Node id must be lowercase kebab-case (e.g. "new-country")',
+        'Node id must be lowercase kebab-case (e.g. "new-message")',
         400,
       );
     }
@@ -33,19 +37,6 @@ export class CreateFlowNodeUseCase {
         `A node with id "${input.id}" already exists`,
         409,
       );
-    }
-
-    if (input.options) {
-      const unknownTargets = Object.values(input.options).filter(
-        (targetId) => !definition.nodes[targetId],
-      );
-      if (unknownTargets.length > 0) {
-        throw new ApplicationError(
-          'FLOW_NODE_UNKNOWN_TARGET',
-          `Unknown target node id(s): ${unknownTargets.join(', ')}`,
-          400,
-        );
-      }
     }
 
     return this.flowDefinitionRepository.createNode(input);

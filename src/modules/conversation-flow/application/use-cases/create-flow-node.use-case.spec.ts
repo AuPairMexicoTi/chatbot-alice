@@ -3,19 +3,20 @@ import { CreateFlowNodeUseCase } from './create-flow-node.use-case';
 import { ApplicationError } from '@shared/domain/errors/application.error';
 
 describe('CreateFlowNodeUseCase', () => {
-  it('creates a node with valid options', async () => {
+  it('creates a draft node with only id, content and image', async () => {
     const repository = new InMemoryFlowDefinitionRepository();
     const useCase = new CreateFlowNodeUseCase(repository);
 
     const created = await useCase.execute({
-      id: 'poland',
-      content: 'Polonia',
-      options: { '1|menu': 'menu' },
+      id: 'promo-verano',
+      content: 'Promoción de verano',
+      imageUrl: 'https://example.com/promo.jpg',
     });
 
-    expect(created.id).toBe('poland');
+    expect(created.id).toBe('promo-verano');
+    expect(created.options).toBeUndefined();
     const definition = await repository.getDefinition();
-    expect(definition.nodes.poland).toBeDefined();
+    expect(definition.nodes['promo-verano']).toBeDefined();
   });
 
   it('rejects ids that are not lowercase kebab-case', async () => {
@@ -23,7 +24,7 @@ describe('CreateFlowNodeUseCase', () => {
     const useCase = new CreateFlowNodeUseCase(repository);
 
     await expect(
-      useCase.execute({ id: 'Poland_1', content: 'Polonia' }),
+      useCase.execute({ id: 'Promo_Verano', content: 'x' }),
     ).rejects.toBeInstanceOf(ApplicationError);
   });
 
@@ -33,19 +34,6 @@ describe('CreateFlowNodeUseCase', () => {
 
     await expect(
       useCase.execute({ id: 'menu', content: 'duplicate' }),
-    ).rejects.toBeInstanceOf(ApplicationError);
-  });
-
-  it('rejects options pointing at unknown target nodes', async () => {
-    const repository = new InMemoryFlowDefinitionRepository();
-    const useCase = new CreateFlowNodeUseCase(repository);
-
-    await expect(
-      useCase.execute({
-        id: 'poland',
-        content: 'Polonia',
-        options: { '1|menu': 'does-not-exist' },
-      }),
     ).rejects.toBeInstanceOf(ApplicationError);
   });
 });

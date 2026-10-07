@@ -18,7 +18,6 @@ import { HttpApmLeadsAdapter } from './infrastructure/adapters/http-apm-leads.ad
 import { ConversationFlowController } from './presentation/conversation-flow.controller';
 import { CreateFlowNodeUseCase } from './application/use-cases/create-flow-node.use-case';
 import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.use-case';
-import { DeleteFlowNodeUseCase } from './application/use-cases/delete-flow-node.use-case';
 
 @Module({
   controllers: [ConversationFlowController],
@@ -26,7 +25,6 @@ import { DeleteFlowNodeUseCase } from './application/use-cases/delete-flow-node.
     ConversationFlowStateService,
     CreateFlowNodeUseCase,
     UpdateFlowNodeUseCase,
-    DeleteFlowNodeUseCase,
     {
       provide: CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS,
       inject: [ConfigService],

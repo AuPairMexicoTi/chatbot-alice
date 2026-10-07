@@ -31,7 +31,7 @@ export class ConversationFlowEngine {
     if (state.status !== 'ACTIVE')
       return { state, messages: [], requestHandoff: false };
     if (input.messageType !== 'TEXT' || !input.text) {
-      return this.reply(state, [
+      return this.reply(definition, state, [
         'Por ahora solo puedo leer mensajes de texto. Escríbeme tu respuesta y te reenvío las opciones.',
         definition.nodes[state.nodeId].content,
       ]);
@@ -110,7 +110,7 @@ export class ConversationFlowEngine {
         nodeId: 'handoff',
         attempts: 0,
       });
-    return this.reply({ ...state, attempts }, [
+    return this.reply(definition, { ...state, attempts }, [
       'No entendí tu respuesta. Elige una de las opciones indicadas.',
       node.content,
     ]);
@@ -131,9 +131,11 @@ export class ConversationFlowEngine {
           ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
           : normalized.length > 1;
     if (!valid)
-      return this.reply({ ...state, attempts: state.attempts + 1 }, [
-        `Necesito un dato válido. ${definition.nodes[state.nodeId].content}`,
-      ]);
+      return this.reply(
+        definition,
+        { ...state, attempts: state.attempts + 1 },
+        [`Necesito un dato válido. ${definition.nodes[state.nodeId].content}`],
+      );
     const order: Record<typeof capture, string> = {
       name: 'capture-age',
       age: 'capture-email',
@@ -169,10 +171,20 @@ export class ConversationFlowEngine {
       state: nextState,
       messages: [node.content],
       requestHandoff: node.terminal === 'HANDOFF',
+      imageUrl: node.imageUrl,
     };
   }
 
-  private reply(state: FlowState, messages: string[]): FlowResult {
-    return { state, messages, requestHandoff: false };
+  private reply(
+    definition: FlowDefinition,
+    state: FlowState,
+    messages: string[],
+  ): FlowResult {
+    return {
+      state,
+      messages,
+      requestHandoff: false,
+      imageUrl: definition.nodes[state.nodeId]?.imageUrl,
+    };
   }
 }

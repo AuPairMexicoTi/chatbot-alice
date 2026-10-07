@@ -1,35 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEnum,
-  IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   MaxLength,
 } from 'class-validator';
 
-const flowNodeCaptureValues = {
-  name: 'name',
-  age: 'age',
-  email: 'email',
-  city: 'city',
-  englishLevel: 'englishLevel',
-} as const;
-
-const flowNodeTerminalValues = {
-  HANDOFF: 'HANDOFF',
-  CLOSED: 'CLOSED',
-} as const;
-
+// Solo id + texto + imagen — sin options/capture/terminal. El nodo creado
+// aquí no participa en el flujo del bot hasta que TI lo conecte por código.
 export class CreateFlowNodeDto {
   @ApiProperty({
-    description: 'Lowercase kebab-case node id, e.g. "poland"',
-    example: 'poland',
+    description: 'Lowercase kebab-case node id, e.g. "promo-verano"',
+    example: 'promo-verano',
   })
   @IsString()
   @MaxLength(60)
   @Matches(/^[a-z][a-z0-9-]*$/, {
-    message: 'id must be lowercase kebab-case (e.g. "new-country")',
+    message: 'id must be lowercase kebab-case (e.g. "new-message")',
   })
   id!: string;
 
@@ -38,27 +26,10 @@ export class CreateFlowNodeDto {
   content!: string;
 
   @ApiPropertyOptional({
-    description: 'Map of trigger phrase(s) -> target node id.',
-    type: Object,
+    example: 'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
     nullable: true,
   })
   @IsOptional()
-  @IsObject()
-  options?: Record<string, string> | null;
-
-  @ApiPropertyOptional({
-    enum: Object.values(flowNodeCaptureValues),
-    nullable: true,
-  })
-  @IsOptional()
-  @IsEnum(flowNodeCaptureValues)
-  capture?: keyof typeof flowNodeCaptureValues | null;
-
-  @ApiPropertyOptional({
-    enum: Object.values(flowNodeTerminalValues),
-    nullable: true,
-  })
-  @IsOptional()
-  @IsEnum(flowNodeTerminalValues)
-  terminal?: keyof typeof flowNodeTerminalValues | null;
+  @IsUrl({ require_tld: false })
+  imageUrl?: string | null;
 }

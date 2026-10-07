@@ -1,48 +1,18 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsUrl } from 'class-validator';
 
-const flowNodeCaptureValues = {
-  name: 'name',
-  age: 'age',
-  email: 'email',
-  city: 'city',
-  englishLevel: 'englishLevel',
-} as const;
-
-const flowNodeTerminalValues = {
-  HANDOFF: 'HANDOFF',
-  CLOSED: 'CLOSED',
-} as const;
-
+// Solo el texto y la imagen son editables desde el panel de administración —
+// options, capture y terminal se definen en código (aupair-flow.definition.ts).
 export class UpdateFlowNodeDto {
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ApiProperty()
   @IsString()
-  content?: string;
+  content!: string;
 
   @ApiPropertyOptional({
-    description:
-      'Map of trigger phrase(s) -> target node id, or null to clear.',
-    type: Object,
+    example: 'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
     nullable: true,
   })
   @IsOptional()
-  @IsObject()
-  options?: Record<string, string> | null;
-
-  @ApiPropertyOptional({
-    enum: Object.values(flowNodeCaptureValues),
-    nullable: true,
-  })
-  @IsOptional()
-  @IsEnum(flowNodeCaptureValues)
-  capture?: keyof typeof flowNodeCaptureValues | null;
-
-  @ApiPropertyOptional({
-    enum: Object.values(flowNodeTerminalValues),
-    nullable: true,
-  })
-  @IsOptional()
-  @IsEnum(flowNodeTerminalValues)
-  terminal?: keyof typeof flowNodeTerminalValues | null;
+  @IsUrl({ require_tld: false })
+  imageUrl?: string | null;
 }

@@ -25,16 +25,10 @@ export class InMemoryFlowDefinitionRepository implements FlowDefinitionRepositor
     const created: FlowNode = {
       id: node.id,
       content: node.content,
-      options: node.options ?? undefined,
-      capture: node.capture ?? undefined,
-      terminal: node.terminal ?? undefined,
+      imageUrl: node.imageUrl ?? undefined,
     };
     this.nodes[node.id] = created;
     return created;
-  }
-
-  async deleteNode(id: string): Promise<void> {
-    delete this.nodes[id];
   }
 
   async updateNode(id: string, patch: UpdateFlowNodeInput): Promise<FlowNode> {
@@ -43,15 +37,9 @@ export class InMemoryFlowDefinitionRepository implements FlowDefinitionRepositor
 
     const updated: FlowNode = {
       ...existing,
-      ...(patch.content !== undefined && { content: patch.content }),
-      ...(patch.options !== undefined && {
-        options: patch.options ?? undefined,
-      }),
-      ...(patch.capture !== undefined && {
-        capture: patch.capture ?? undefined,
-      }),
-      ...(patch.terminal !== undefined && {
-        terminal: patch.terminal ?? undefined,
+      content: patch.content,
+      ...(patch.imageUrl !== undefined && {
+        imageUrl: patch.imageUrl ?? undefined,
       }),
     };
     this.nodes[id] = updated;

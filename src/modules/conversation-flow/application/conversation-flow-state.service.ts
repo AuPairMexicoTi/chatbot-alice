@@ -23,9 +23,6 @@ const staticFlowDefinitionRepository: FlowDefinitionRepository = {
   updateNode: async () => {
     throw new Error('Static flow definition repository is read-only');
   },
-  deleteNode: async () => {
-    throw new Error('Static flow definition repository is read-only');
-  },
 };
 
 export const CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS = Symbol(

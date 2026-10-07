@@ -57,7 +57,7 @@ export class UpdateAutoReplyDto {
     nullable: true,
   })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   responseImageUrl?: string | null;
 
   @ApiPropertyOptional({

@@ -1,5 +1,4 @@
 import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
-import { Prisma } from '@generated/prisma/client';
 import {
   CreateFlowNodeInput,
   FlowDefinitionRepository,
@@ -23,6 +22,7 @@ export class PrismaFlowDefinitionRepository implements FlowDefinitionRepository 
       nodes[record.id] = {
         id: record.id,
         content: record.content,
+        imageUrl: record.imageUrl ?? undefined,
         options: (record.options as Record<string, string> | null) ?? undefined,
         capture: record.capture ?? undefined,
         terminal: record.terminal ?? undefined,
@@ -41,44 +41,33 @@ export class PrismaFlowDefinitionRepository implements FlowDefinitionRepository 
       data: {
         id: node.id,
         content: node.content,
-        options:
-          node.options === null || node.options === undefined
-            ? Prisma.DbNull
-            : node.options,
-        capture: node.capture ?? null,
-        terminal: node.terminal ?? null,
+        imageUrl: node.imageUrl ?? null,
       },
     });
 
     return {
       id: record.id,
       content: record.content,
+      imageUrl: record.imageUrl ?? undefined,
       options: (record.options as Record<string, string> | null) ?? undefined,
       capture: record.capture ?? undefined,
       terminal: record.terminal ?? undefined,
     };
   }
 
-  async deleteNode(id: string): Promise<void> {
-    await this.prisma.flowNode.delete({ where: { id } });
-  }
-
   async updateNode(id: string, patch: UpdateFlowNodeInput): Promise<FlowNode> {
     const record = await this.prisma.flowNode.update({
       where: { id },
       data: {
-        ...(patch.content !== undefined && { content: patch.content }),
-        ...(patch.options !== undefined && {
-          options: patch.options === null ? Prisma.DbNull : patch.options,
-        }),
-        ...(patch.capture !== undefined && { capture: patch.capture }),
-        ...(patch.terminal !== undefined && { terminal: patch.terminal }),
+        content: patch.content,
+        ...(patch.imageUrl !== undefined && { imageUrl: patch.imageUrl }),
       },
     });
 
     return {
       id: record.id,
       content: record.content,
+      imageUrl: record.imageUrl ?? undefined,
       options: (record.options as Record<string, string> | null) ?? undefined,
       capture: record.capture ?? undefined,
       terminal: record.terminal ?? undefined,

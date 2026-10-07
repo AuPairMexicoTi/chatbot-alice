@@ -25,19 +25,6 @@ export class UpdateFlowNodeUseCase {
       );
     }
 
-    if (patch.options) {
-      const unknownTargets = Object.values(patch.options).filter(
-        (targetId) => !definition.nodes[targetId],
-      );
-      if (unknownTargets.length > 0) {
-        throw new ApplicationError(
-          'FLOW_NODE_UNKNOWN_TARGET',
-          `Unknown target node id(s): ${unknownTargets.join(', ')}`,
-          400,
-        );
-      }
-    }
-
     return this.flowDefinitionRepository.updateNode(id, patch);
   }
 }

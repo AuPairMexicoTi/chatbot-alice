@@ -63,6 +63,31 @@ const autoReplies: SeedAutoReply[] = [
   },
 ];
 
+// Las imágenes de estos nodos vivían hardcodeadas en
+// process-inbound-whatsapp-message.use-case.ts (getFlowImageUrl) antes de
+// mover el flujo a la base de datos — se siembran aquí con el mismo nombre
+// de archivo para que el cutover no cambie lo que el bot envía.
+const flowNodeImageFilenames: Record<string, string> = {
+  menu: 'principal.jpeg',
+  germany: 'alemania.jpeg',
+  belgium: 'belgica.jpeg',
+  usa: 'estados-unidos.jpeg',
+  france: 'francia.jpeg',
+  italy: 'italia.jpeg',
+};
+
+const publicBaseUrl = (process.env.CHATBOT_PUBLIC_BASE_URL ?? '').replace(
+  /\/$/u,
+  '',
+);
+
+const flowNodeImageUrl = (nodeId: string): string | undefined => {
+  const filename = flowNodeImageFilenames[nodeId];
+  return filename && publicBaseUrl
+    ? `${publicBaseUrl}/api/v1/assets/${filename}`
+    : undefined;
+};
+
 async function main() {
   // Volcado inicial del menú hardcodeado (aupair-flow.definition.ts) a la tabla
   // alc_flow_nodes — mismo contenido exacto que ya está en producción, así el
@@ -70,6 +95,7 @@ async function main() {
   for (const node of Object.values(aupairFlowDefinition.nodes)) {
     const data = {
       content: node.content,
+      imageUrl: flowNodeImageUrl(node.id) ?? null,
       options: node.options ?? undefined,
       capture: node.capture ?? null,
       terminal: node.terminal ?? null,

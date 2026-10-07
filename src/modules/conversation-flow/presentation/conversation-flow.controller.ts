@@ -1,9 +1,7 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
-  HttpCode,
   Inject,
   Param,
   Patch,
@@ -17,12 +15,16 @@ import {
   FlowDefinitionRepository,
 } from '../application/ports/flow-definition.repository';
 import { CreateFlowNodeUseCase } from '../application/use-cases/create-flow-node.use-case';
-import { DeleteFlowNodeUseCase } from '../application/use-cases/delete-flow-node.use-case';
 import { UpdateFlowNodeUseCase } from '../application/use-cases/update-flow-node.use-case';
 import { FlowDefinition, FlowNode } from '../domain/conversation-flow.types';
 import { CreateFlowNodeDto } from './dto/create-flow-node.dto';
 import { UpdateFlowNodeDto } from './dto/update-flow-node.dto';
 
+// Expone lectura del flujo, creación de nodos "borrador" (id + texto +
+// imagen, sin wiring) y edición del texto/imagen de un nodo existente. La
+// estructura (options/capture/terminal, qué nodo conecta con cuál) es
+// código (aupair-flow.definition.ts) — no hay forma de cambiar el wiring
+// desde el panel de administración.
 @ApiTags('Conversation Flow')
 @Controller('conversation-flow')
 @UseGuards(CrmSecretGuard)
@@ -32,7 +34,6 @@ export class ConversationFlowController {
     private readonly flowDefinitionRepository: FlowDefinitionRepository,
     private readonly createFlowNodeUseCase: CreateFlowNodeUseCase,
     private readonly updateFlowNodeUseCase: UpdateFlowNodeUseCase,
-    private readonly deleteFlowNodeUseCase: DeleteFlowNodeUseCase,
   ) {}
 
   @Get('definition')
@@ -45,24 +46,20 @@ export class ConversationFlowController {
   }
 
   @Post('nodes')
-  @ApiOkResponse({ description: 'Creates a new flow node.' })
+  @ApiOkResponse({
+    description:
+      'Creates a draft flow node (id + content + image only, not wired into the flow).',
+  })
   createNode(@Body() body: CreateFlowNodeDto): Promise<FlowNode> {
     return this.createFlowNodeUseCase.execute(body);
   }
 
   @Patch('nodes/:id')
-  @ApiOkResponse({ description: 'Updates an existing flow node.' })
+  @ApiOkResponse({ description: "Updates an existing flow node's text/image." })
   updateNode(
     @Param('id') id: string,
     @Body() body: UpdateFlowNodeDto,
   ): Promise<FlowNode> {
     return this.updateFlowNodeUseCase.execute(id, body);
-  }
-
-  @Delete('nodes/:id')
-  @HttpCode(204)
-  @ApiOkResponse({ description: 'Deletes a flow node.' })
-  deleteNode(@Param('id') id: string): Promise<void> {
-    return this.deleteFlowNodeUseCase.execute(id);
   }
 }
