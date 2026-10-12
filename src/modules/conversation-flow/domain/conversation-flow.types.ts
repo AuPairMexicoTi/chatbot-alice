@@ -23,6 +23,7 @@ export type FlowState = {
 export type FlowNode = {
   id: string;
   content: string;
+  imageUrl?: string;
   options?: Record<string, string>;
   capture?: 'name' | 'age' | 'email' | 'city' | 'englishLevel';
   terminal?: 'HANDOFF' | 'CLOSED';
@@ -38,4 +39,5 @@ export type FlowResult = {
   state: FlowState;
   messages: string[];
   requestHandoff: boolean;
+  imageUrl?: string;
 };

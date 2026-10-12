@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
+import { CrmSecretGuard } from '@shared/presentation/guards/crm-secret.guard';
 import {
   AUTO_REPLY_REPOSITORY,
 } from './application/ports/auto-reply.repository';
 import { CreateAutoReplyUseCase } from './application/use-cases/create-auto-reply.use-case';
 import { ListAutoRepliesUseCase } from './application/use-cases/list-auto-replies.use-case';
 import { ResolveAutoReplyUseCase } from './application/use-cases/resolve-auto-reply.use-case';
+import { UpdateAutoReplyUseCase } from './application/use-cases/update-auto-reply.use-case';
+import { DeleteAutoReplyUseCase } from './application/use-cases/delete-auto-reply.use-case';
 import { InMemoryAutoReplyRepository } from './infrastructure/repositories/in-memory-auto-reply.repository';
 import { PrismaAutoReplyRepository } from './infrastructure/repositories/prisma-auto-reply.repository';
 import { AutoRepliesController } from './presentation/auto-replies.controller';
@@ -17,6 +20,9 @@ import { AutoRepliesController } from './presentation/auto-replies.controller';
     ResolveAutoReplyUseCase,
     CreateAutoReplyUseCase,
     ListAutoRepliesUseCase,
+    UpdateAutoReplyUseCase,
+    DeleteAutoReplyUseCase,
+    CrmSecretGuard,
     {
       provide: AUTO_REPLY_REPOSITORY,
       inject: [ConfigService, PrismaService],

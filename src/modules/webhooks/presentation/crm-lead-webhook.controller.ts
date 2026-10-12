@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SendWelcomeMessageUseCase } from '@modules/whatsapp/application/use-cases/send-welcome-message.use-case';
-import { CrmSecretGuard } from './guards/crm-secret.guard';
+import { CrmSecretGuard } from '@shared/presentation/guards/crm-secret.guard';
 import { SendWelcomeMessageDto } from './dto/send-welcome-message.dto';
 
 @ApiTags('CRM Webhooks')

@@ -59,7 +59,7 @@ export class CreateAutoReplyDto {
     example: 'https://aupairmexico.com/wp-content/uploads/2025/04/23-2.png',
   })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   responseImageUrl?: string;
 
   @ApiPropertyOptional({
