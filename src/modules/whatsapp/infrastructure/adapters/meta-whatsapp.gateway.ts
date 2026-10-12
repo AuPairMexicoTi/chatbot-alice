@@ -4,6 +4,7 @@ import {
   SendImageMessageInput,
   SendMessageResult,
   SendTextMessageInput,
+  SendTemplateMessageInput,
   WhatsAppGateway,
 } from '../../domain/whatsapp-gateway';
 
@@ -78,6 +79,35 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
       image: {
         link: input.imageUrl,
         caption: input.caption,
+      },
+    });
+  }
+
+  async sendTemplateMessage(
+    input: SendTemplateMessageInput,
+  ): Promise<SendMessageResult> {
+    const components: Array<Record<string, unknown>> = [
+      {
+        type: 'body',
+        parameters: input.bodyParameters.map((text) => ({ type: 'text', text })),
+      },
+    ];
+
+    if (input.imageUrl) {
+      components.unshift({
+        type: 'header',
+        parameters: [{ type: 'image', image: { link: input.imageUrl } }],
+      });
+    }
+
+    return this.sendMessage({
+      messaging_product: 'whatsapp',
+      to: this.normalizeRecipientPhoneNumber(input.to),
+      type: 'template',
+      template: {
+        name: input.templateName,
+        language: { code: input.languageCode },
+        components,
       },
     });
   }

@@ -54,8 +54,26 @@ export class SendOutboundWhatsAppMessageUseCase {
       throw new ApplicationError('CONTACT_NOT_FOUND', 'Contact not found', 404);
     }
 
-    const result =
-      message.type === 'IMAGE'
+    const result = this.isCrmWelcomeTemplate(message.metadata)
+      ? await this.whatsAppGateway.sendTemplateMessage({
+          to: contact.phoneNumber,
+          templateName: this.getRequiredMetadataString(
+            message.metadata,
+            'templateName',
+          ),
+          languageCode: this.getRequiredMetadataString(
+            message.metadata,
+            'templateLanguage',
+          ),
+          bodyParameters: [
+            this.getRequiredMetadataString(
+              message.metadata,
+              'templateBodyParameter',
+            ),
+          ],
+          imageUrl: this.getRequiredImageUrl(message.metadata),
+        })
+      : message.type === 'IMAGE'
         ? await this.whatsAppGateway.sendImageMessage({
             to: contact.phoneNumber,
             imageUrl: this.getRequiredImageUrl(message.metadata),
@@ -95,5 +113,27 @@ export class SendOutboundWhatsAppMessageUseCase {
     }
 
     return imageUrl;
+  }
+
+  private isCrmWelcomeTemplate(
+    metadata: Record<string, string | number | boolean | null>,
+  ): boolean {
+    return metadata.responseSource === 'CRM_WELCOME_TEMPLATE';
+  }
+
+  private getRequiredMetadataString(
+    metadata: Record<string, string | number | boolean | null>,
+    key: string,
+  ): string {
+    const value = metadata[key];
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      throw new ApplicationError(
+        'TEMPLATE_CONFIGURATION_NOT_FOUND',
+        `Template metadata "${key}" not found`,
+        400,
+      );
+    }
+
+    return value;
   }
 }

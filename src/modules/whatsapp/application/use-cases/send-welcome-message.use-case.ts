@@ -82,9 +82,20 @@ export class SendWelcomeMessageUseCase {
       text: this.applyTemplate(template.responseText, input.name),
       status: 'QUEUED',
       metadata: {
-        responseSource: 'CRM_WELCOME',
+        responseSource: this.hasConfiguredMetaTemplate()
+          ? 'CRM_WELCOME_TEMPLATE'
+          : 'CRM_WELCOME',
         autoReplyId: template.id,
         autoReplyKey: template.key,
+        templateName: this.configService.get<string>(
+          'whatsapp.welcomeTemplateName',
+          '',
+        ),
+        templateLanguage: this.configService.get<string>(
+          'whatsapp.welcomeTemplateLanguage',
+          'es_MX',
+        ),
+        templateBodyParameter: this.getTemplateBodyParameter(input.name),
         ...(this.getWelcomeImageUrl(template.responseImageUrl)
           ? { imageUrl: this.getWelcomeImageUrl(template.responseImageUrl) }
           : {}),
@@ -108,5 +119,17 @@ export class SendWelcomeMessageUseCase {
     return publicBaseUrl
       ? `${publicBaseUrl}/api/v1/assets/principal.jpeg`
       : templateImageUrl;
+  }
+
+  private hasConfiguredMetaTemplate(): boolean {
+    return (
+      this.configService
+        .get<string>('whatsapp.welcomeTemplateName', '')
+        .trim().length > 0
+    );
+  }
+
+  private getTemplateBodyParameter(name: string | null): string {
+    return name && name.trim().length > 0 ? name.trim() : 'amiga';
   }
 }

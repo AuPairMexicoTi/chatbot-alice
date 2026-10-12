@@ -71,6 +71,12 @@ WhatsApp images:
 - The initial menu and lead welcome message use `principal.jpeg`; country cards attach the available country image for Germany, Belgium, United States, France, and Italy.
 - Image files live in `public/images`. Meta must be able to reach the configured URL without authentication.
 
+CRM welcome templates:
+
+- Set `WHATSAPP_WELCOME_TEMPLATE_NAME` to an approved Meta template name (for example, `bienvenida_registro`) and `WHATSAPP_WELCOME_TEMPLATE_LANGUAGE=es_MX`.
+- When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header and the lead name as `{{1}}`.
+- The template must only be triggered for leads that explicitly accepted WhatsApp communications.
+
 ## Deterministic replies
 
 Predetermined replies can be resolved before AI.

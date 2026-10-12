@@ -11,6 +11,9 @@ export const whatsappConfig = registerAs('whatsapp', () => ({
   verifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? '',
   appSecret: process.env.WHATSAPP_APP_SECRET ?? '',
   validateSignature: process.env.WHATSAPP_VALIDATE_SIGNATURE === 'true',
+  welcomeTemplateName: process.env.WHATSAPP_WELCOME_TEMPLATE_NAME ?? '',
+  welcomeTemplateLanguage:
+    process.env.WHATSAPP_WELCOME_TEMPLATE_LANGUAGE ?? 'es_MX',
 }));
 
 export type WhatsAppConfig = ReturnType<typeof whatsappConfig>;

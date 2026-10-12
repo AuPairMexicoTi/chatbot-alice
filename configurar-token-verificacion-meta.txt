@@ -1,0 +1,66 @@
+CONFIGURAR TOKEN DE VERIFICACIÓN DEL WEBHOOK DE META
+
+El token de verificación NO es el token de acceso de WhatsApp. Meta lo usa
+solamente para comprobar que controlas el endpoint del webhook.
+
+IMPORTANTE
+- No uses `alice-local-verify-token`: es un valor de desarrollo y ya quedó
+  visible en una captura.
+- El token generado se mostrará en la terminal del VPS. Cópialo directamente
+  desde ahí al formulario de Meta; no lo pegues en este chat ni en capturas.
+- No cambies los demás registros DNS ni los tokens de otros servicios.
+
+1) Conéctate al VPS por SSH y ejecuta:
+
+ssh root@177.7.60.246
+cd /opt/chatbot-alice
+python3 - <<'PY'
+import secrets
+from pathlib import Path
+
+path = Path('.env')
+token = secrets.token_hex(32)
+lines = path.read_text().splitlines()
+key = 'WHATSAPP_VERIFY_TOKEN'
+
+for i, line in enumerate(lines):
+    if line.startswith(key + '='):
+        lines[i] = f'{key}={token}'
+        break
+else:
+    lines.append(f'{key}={token}')
+
+path.write_text('\n'.join(lines) + '\n')
+path.chmod(0o600)
+print('Copia este token directamente al campo Token de verificación de Meta:')
+print(token)
+PY
+
+2) Reinicia solo el contenedor de la aplicación:
+
+docker compose -f compose.production.yml up -d --force-recreate app
+
+Espera a que termine y confirma que el servicio está activo:
+
+docker compose -f compose.production.yml ps
+
+3) En Meta for Developers > tu app > Webhooks:
+- Producto: selecciona “WhatsApp Business Account” (no “User”).
+- URL de devolución de llamada:
+  https://bot.aupairmexico.com/api/v1/webhooks/whatsapp
+- Token de verificación: pega el token recién generado en el paso 1.
+- Pulsa “Verificar y guardar”.
+- En los campos del webhook, activa la suscripción `messages`.
+
+4) Prueba enviando “Hola” desde un teléfono que esté permitido para el número
+   de prueba de WhatsApp. Si la app sigue en modo Desarrollo, solo funcionará
+   con usuarios de prueba autorizados en Meta.
+
+Si Meta vuelve a rechazar la verificación, no compartas el token. En el VPS
+revisa los logs con:
+
+docker compose -f compose.production.yml logs --tail=100 app
+
+SEGURIDAD
+El token de acceso de WhatsApp que apareció en una captura debe rotarse en
+Meta y actualizarse en el VPS. No reutilices el token expuesto.

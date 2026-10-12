@@ -3,6 +3,4 @@ dist
 coverage
 .git
 .pnpm-store
-.env
-.env.local
-.env.*.local
+.env*

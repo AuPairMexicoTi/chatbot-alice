@@ -59,6 +59,8 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.string().allow('').required(),
   }),
   WHATSAPP_VALIDATE_SIGNATURE: Joi.boolean().required(),
+  WHATSAPP_WELCOME_TEMPLATE_NAME: Joi.string().allow('').default(''),
+  WHATSAPP_WELCOME_TEMPLATE_LANGUAGE: Joi.string().allow('').default('es_MX'),
   AI_PROVIDER: Joi.string().valid('mock', 'openai', 'gemini').required(),
   AI_MODEL: Joi.when('AI_PROVIDER', {
     is: 'mock',
