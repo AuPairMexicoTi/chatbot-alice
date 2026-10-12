@@ -38,14 +38,7 @@ export class ConversationFlowEngine {
     const normalized = normalize(input.text);
     if (
       state.nodeId === definition.entryNodeId &&
-      [
-        'hola',
-        'holaa',
-        'buenas',
-        'buenos dias',
-        'buenas tardes',
-        'buenas noches',
-      ].includes(normalized)
+      this.isGreeting(normalized)
     ) {
       return this.enter(definition, {
         ...state,
@@ -191,5 +184,19 @@ export class ConversationFlowEngine {
     }
 
     return 'No entendí tu respuesta. Elige una de las opciones indicadas o escribe “menú” para volver al inicio.';
+  }
+
+  private isGreeting(normalized: string): boolean {
+    return [
+      'hola',
+      'holaa',
+      'buenas',
+      'buenos dias',
+      'buenas tardes',
+      'buenas noches',
+    ].some(
+      (greeting) =>
+        normalized === greeting || normalized.startsWith(`${greeting} `),
+    );
   }
 }

@@ -150,7 +150,8 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const outbound = [...store.messages.values()].find(
       (message) => message.direction === 'OUTBOUND',
     );
-    expect(outbound?.text).toContain('Países Disponibles');
+    expect(outbound?.text).toContain('No entendí');
+    expect(outbound?.text).not.toContain('Te damos la bienvenida');
     expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
   });
 
