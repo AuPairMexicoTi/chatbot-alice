@@ -29,6 +29,18 @@ type SeedAutoReply = {
 // una vez que el equipo defina el copy real.
 const autoReplies: SeedAutoReply[] = [
   {
+    // Esta clave la consume el webhook del CRM; no se evalúa contra mensajes
+    // entrantes. El cuerpo enviado por WhatsApp es la plantilla Meta aprobada.
+    key: 'welcome_zapier_lead',
+    title: 'Bienvenida de leads desde CRM',
+    matchType: 'EXACT',
+    patterns: ['__crm_welcome__'],
+    responseText: 'Hola {{name}}, ¡te damos la bienvenida a Au Pair México!',
+    priority: 100,
+    isActive: true,
+    locale: 'es-MX',
+  },
+  {
     key: 'welcome_aupair_mexico',
     title: 'Bienvenida Au Pair Mexico',
     matchType: 'CONTAINS',

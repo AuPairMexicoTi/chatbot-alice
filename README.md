@@ -75,6 +75,7 @@ CRM welcome templates:
 
 - Set `WHATSAPP_WELCOME_TEMPLATE_NAME` to an approved Meta template name (for example, `bienvenida_registro`) and `WHATSAPP_WELCOME_TEMPLATE_LANGUAGE=es_MX`.
 - When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header and the lead name as `{{1}}`.
+- The `welcome_zapier_lead` auto-reply is provisioned by the database migration. It must remain active; its stored text is an administrative record, while WhatsApp sends the approved Meta template.
 - The template must only be triggered for leads that explicitly accepted WhatsApp communications.
 
 ## Deterministic replies
