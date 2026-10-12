@@ -38,6 +38,19 @@ describe('ConversationFlowEngine', () => {
     expect(result.messages[0]).not.toContain('No entendí');
   });
 
+  it('uses a concise reprompt instead of repeating the menu content', () => {
+    const result = engine.advance(
+      aupairFlowDefinition,
+      engine.start(aupairFlowDefinition).state,
+      text('Y'),
+    );
+
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]).toContain('No entendí');
+    expect(result.messages[0]).not.toContain('Te damos la bienvenida');
+    expect(result.imageUrl).toBeUndefined();
+  });
+
   it('routes Denmark and Sweden selections to their country cards', () => {
     const menu = engine.start(aupairFlowDefinition);
     const countries = engine.advance(

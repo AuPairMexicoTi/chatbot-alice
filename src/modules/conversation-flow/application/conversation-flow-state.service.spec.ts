@@ -59,6 +59,24 @@ describe('ConversationFlowStateService', () => {
     expect(result.messages[0]).toContain('No entendí');
   });
 
+  it('evaluates the first non-greeting reply instead of repeating the welcome', async () => {
+    const repository = repositoryWith(null);
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+    );
+
+    const result = await service.advance('conversation-1', {
+      text: 'Y',
+      messageType: 'TEXT',
+    });
+
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]).toContain('No entendí');
+    expect(result.messages[0]).not.toContain('bienvenida');
+  });
+
   it('restarts a finished flow when the candidate sends another message', async () => {
     const repository = repositoryWith({
       state: {

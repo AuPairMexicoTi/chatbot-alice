@@ -32,8 +32,7 @@ export class ConversationFlowEngine {
       return { state, messages: [], requestHandoff: false };
     if (input.messageType !== 'TEXT' || !input.text) {
       return this.reply(definition, state, [
-        'Por ahora solo puedo leer mensajes de texto. Escríbeme tu respuesta y te reenvío las opciones.',
-        definition.nodes[state.nodeId].content,
+        'Por ahora solo puedo leer mensajes de texto. Escribe una de las opciones indicadas o escribe “menú”.',
       ]);
     }
     const normalized = normalize(input.text);
@@ -111,8 +110,7 @@ export class ConversationFlowEngine {
         attempts: 0,
       });
     return this.reply(definition, { ...state, attempts }, [
-      'No entendí tu respuesta. Elige una de las opciones indicadas.',
-      node.content,
+      this.invalidReply(node.id),
     ]);
   }
 
@@ -184,7 +182,14 @@ export class ConversationFlowEngine {
       state,
       messages,
       requestHandoff: false,
-      imageUrl: definition.nodes[state.nodeId]?.imageUrl,
     };
+  }
+
+  private invalidReply(nodeId: string): string {
+    if (nodeId === 'menu') {
+      return 'No entendí tu respuesta. Responde con:\n\n1️⃣ Países disponibles\n2️⃣ ¿Qué hace una Au Pair?\n3️⃣ Proceso de aplicación\n4️⃣ Ya quiero aplicar\n\nTambién puedes escribir “asesor”.';
+    }
+
+    return 'No entendí tu respuesta. Elige una de las opciones indicadas o escribe “menú” para volver al inicio.';
   }
 }

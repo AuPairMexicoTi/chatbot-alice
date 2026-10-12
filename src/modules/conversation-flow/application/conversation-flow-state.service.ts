@@ -54,9 +54,15 @@ export class ConversationFlowStateService {
       this.now().getTime() - record.updatedAt.getTime() >=
         this.inactivityTimeoutMs;
     const definition = await this.flowDefinitionRepository.getDefinition();
-    const result = shouldRestart
-      ? this.engine.start(definition)
-      : this.engine.advance(definition, record.state, input);
+    // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
+    // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
+    // toda la bienvenida; un saludo explícito continúa mostrando el menú.
+    const initialState = this.engine.start(definition).state;
+    const result = this.engine.advance(
+      definition,
+      shouldRestart ? initialState : record.state,
+      input,
+    );
     await this.repository.save(conversationId, result.state);
     return result;
   }

@@ -70,6 +70,7 @@ WhatsApp images:
 - `CHATBOT_PUBLIC_BASE_URL` must be the public HTTPS origin of this backend (for example, `https://alice.example.com`). Meta downloads images from `/api/v1/assets/<filename>`.
 - The initial menu and lead welcome message use `principal.jpeg`; country cards attach the available country image for Germany, Belgium, United States, France, and Italy.
 - Image files live in `public/images`. Meta must be able to reach the configured URL without authentication.
+- At each production start, ALICE safely creates missing flow nodes and fills only missing image URLs. It never replaces an existing node's text or image edited from APM.
 
 CRM welcome templates:
 
