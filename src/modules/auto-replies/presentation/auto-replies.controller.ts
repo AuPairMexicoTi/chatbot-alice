@@ -38,7 +38,9 @@ export class AutoRepliesController {
   async list(): Promise<AutoReplyResponseDto[]> {
     const autoReplies = await this.listAutoRepliesUseCase.execute();
 
-    return autoReplies.map(AutoReplyResponseDto.fromDomain);
+    return autoReplies.map((autoReply) =>
+      AutoReplyResponseDto.fromDomain(autoReply),
+    );
   }
 
   @Post()

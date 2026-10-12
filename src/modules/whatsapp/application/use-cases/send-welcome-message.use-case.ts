@@ -123,9 +123,8 @@ export class SendWelcomeMessageUseCase {
 
   private hasConfiguredMetaTemplate(): boolean {
     return (
-      this.configService
-        .get<string>('whatsapp.welcomeTemplateName', '')
-        .trim().length > 0
+      this.configService.get<string>('whatsapp.welcomeTemplateName', '').trim()
+        .length > 0
     );
   }
 

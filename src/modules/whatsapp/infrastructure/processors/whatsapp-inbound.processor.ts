@@ -1,7 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JsonValue } from '@shared/domain/types/json.type';
 import {
   WEBHOOK_EVENT_REPOSITORY,
   WebhookEventRepository,
@@ -34,15 +33,19 @@ export class WhatsAppInboundProcessor extends WorkerHost {
       return;
     }
 
-    await this.webhookEventRepository.updateStatus(webhookEvent.id, 'PROCESSING');
+    await this.webhookEventRepository.updateStatus(
+      webhookEvent.id,
+      'PROCESSING',
+    );
 
     try {
-      const parsed = this.whatsAppWebhookParser.parse(
-        webhookEvent.payload as JsonValue,
-      );
+      const parsed = this.whatsAppWebhookParser.parse(webhookEvent.payload);
 
       await this.processInboundWhatsAppMessageUseCase.execute(parsed);
-      await this.webhookEventRepository.updateStatus(webhookEvent.id, 'PROCESSED');
+      await this.webhookEventRepository.updateStatus(
+        webhookEvent.id,
+        'PROCESSED',
+      );
       this.logger.log(`Evento inbound procesado ${job.data.externalId}`);
     } catch (error) {
       await this.webhookEventRepository.updateStatus(webhookEvent.id, 'FAILED');

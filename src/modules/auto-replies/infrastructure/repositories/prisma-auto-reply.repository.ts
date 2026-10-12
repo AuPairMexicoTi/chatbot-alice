@@ -17,7 +17,7 @@ export class PrismaAutoReplyRepository implements AutoReplyRepository {
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
     });
 
-    return records.map(PrismaAutoReplyMapper.toDomain);
+    return records.map((record) => PrismaAutoReplyMapper.toDomain(record));
   }
 
   async listActiveByLocale(locale: string): Promise<AutoReply[]> {
@@ -29,7 +29,7 @@ export class PrismaAutoReplyRepository implements AutoReplyRepository {
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
     });
 
-    return records.map(PrismaAutoReplyMapper.toDomain);
+    return records.map((record) => PrismaAutoReplyMapper.toDomain(record));
   }
 
   async findByKey(key: string): Promise<AutoReply | null> {

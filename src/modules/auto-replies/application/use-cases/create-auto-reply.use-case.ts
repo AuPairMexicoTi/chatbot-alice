@@ -16,7 +16,9 @@ export class CreateAutoReplyUseCase {
 
   async execute(input: CreateAutoReplyInput): Promise<AutoReply> {
     const autoReplies = await this.autoReplyRepository.listAll();
-    const duplicate = autoReplies.find((autoReply) => autoReply.key === input.key);
+    const duplicate = autoReplies.find(
+      (autoReply) => autoReply.key === input.key,
+    );
 
     if (duplicate) {
       throw new ApplicationError(

@@ -15,9 +15,12 @@ export class ResolveAutoReplyUseCase {
   async execute(
     text: string | null,
     locale: string,
-  ): Promise<
-    { id: string; key: string; text: string; imageUrl: string | null } | null
-  > {
+  ): Promise<{
+    id: string;
+    key: string;
+    text: string;
+    imageUrl: string | null;
+  } | null> {
     const normalizedInput = this.normalize(text);
     if (!normalizedInput) {
       return null;

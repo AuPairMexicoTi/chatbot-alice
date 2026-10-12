@@ -2,9 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
 import { CrmSecretGuard } from '@shared/presentation/guards/crm-secret.guard';
-import {
-  AUTO_REPLY_REPOSITORY,
-} from './application/ports/auto-reply.repository';
+import { AUTO_REPLY_REPOSITORY } from './application/ports/auto-reply.repository';
 import { CreateAutoReplyUseCase } from './application/use-cases/create-auto-reply.use-case';
 import { ListAutoRepliesUseCase } from './application/use-cases/list-auto-replies.use-case';
 import { ResolveAutoReplyUseCase } from './application/use-cases/resolve-auto-reply.use-case';

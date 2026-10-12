@@ -11,7 +11,8 @@ describe('ResolveAutoReplyUseCase', () => {
           title: 'Business hours',
           matchType: 'CONTAINS',
           patterns: ['horario', 'a que hora abren'],
-          responseText: 'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
+          responseText:
+            'Nuestro horario es de lunes a viernes de 9:00 a 18:00.',
           responseImageUrl: null,
           priority: 10,
           isActive: true,
@@ -60,7 +61,10 @@ describe('ResolveAutoReplyUseCase', () => {
       new InMemoryAutoReplyRepository(),
     );
 
-    const result = await useCase.execute('Necesito ayuda con una compra', 'es-MX');
+    const result = await useCase.execute(
+      'Necesito ayuda con una compra',
+      'es-MX',
+    );
 
     expect(result).toBeNull();
   });

@@ -28,7 +28,9 @@ export class PrismaMessageRepository implements MessageRepository {
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
-    return records.reverse().map(PrismaMessageMapper.toDomain);
+    return records
+      .reverse()
+      .map((record) => PrismaMessageMapper.toDomain(record));
   }
 
   async findById(id: string): Promise<Message | null> {

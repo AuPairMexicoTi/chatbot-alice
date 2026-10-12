@@ -30,14 +30,16 @@ export class ConversationInactivityService {
       { conversationId, stage: 'REMINDER' },
       {
         delay: reminderDelayMs,
-      jobId: `inactivity-reminder-${conversationId}`,
+        jobId: `inactivity-reminder-${conversationId}`,
       },
     );
   }
 
   async cancel(conversationId: string): Promise<void> {
     for (const stage of ['reminder', 'close']) {
-      const job = await this.queue.getJob(`inactivity-${stage}-${conversationId}`);
+      const job = await this.queue.getJob(
+        `inactivity-${stage}-${conversationId}`,
+      );
       await job?.remove();
     }
   }
@@ -53,7 +55,7 @@ export class ConversationInactivityService {
         { conversationId: job.conversationId, stage: 'CLOSE' },
         {
           delay: closeDelayMs,
-        jobId: `inactivity-close-${job.conversationId}`,
+          jobId: `inactivity-close-${job.conversationId}`,
         },
       );
       return;

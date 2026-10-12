@@ -89,7 +89,10 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
     const components: Array<Record<string, unknown>> = [
       {
         type: 'body',
-        parameters: input.bodyParameters.map((text) => ({ type: 'text', text })),
+        parameters: input.bodyParameters.map((text) => ({
+          type: 'text',
+          text,
+        })),
       },
     ];
 
