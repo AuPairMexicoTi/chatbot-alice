@@ -29,7 +29,6 @@
     "prisma:generate": "prisma generate --config ./prisma.config.ts",
     "db:migrate": "prisma migrate dev --config ./prisma.config.ts",
     "db:migrate:deploy": "prisma migrate deploy --config ./prisma.config.ts",
-    "db:seed:flow-nodes": "ts-node -r tsconfig-paths/register prisma/seed-flow-nodes.ts",
     "db:reset": "prisma migrate reset --config ./prisma.config.ts",
     "db:studio": "prisma studio --config ./prisma.config.ts",
     "docker:up": "docker compose up -d",

@@ -49,7 +49,10 @@ import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.
       useFactory: (configService: ConfigService, prisma: PrismaService) =>
         configService.get<string>('app.nodeEnv') === 'test'
           ? new InMemoryFlowDefinitionRepository()
-          : new PrismaFlowDefinitionRepository(prisma),
+          : new PrismaFlowDefinitionRepository(
+              prisma,
+              configService.get<string>('conversationFlow.publicBaseUrl') ?? '',
+            ),
     },
     {
       provide: APM_LEADS_PORT,
