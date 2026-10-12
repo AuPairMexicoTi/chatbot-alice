@@ -124,6 +124,12 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
       return `52${normalizedPhoneNumber.slice(3)}`;
     }
 
+    // Los leads de APM se almacenan con los diez dígitos nacionales. Meta
+    // exige el formato internacional sin el signo "+" para sus destinatarios.
+    if (/^\d{10}$/u.test(normalizedPhoneNumber)) {
+      return `52${normalizedPhoneNumber}`;
+    }
+
     return normalizedPhoneNumber;
   }
 }

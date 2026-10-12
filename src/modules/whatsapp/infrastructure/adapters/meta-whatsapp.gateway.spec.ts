@@ -37,4 +37,26 @@ describe('MetaWhatsAppGateway', () => {
       to: '527771683807',
     });
   });
+
+  it('adds the Mexican country code to an APM lead phone number', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ messages: [{ id: 'wamid.1' }] }), {
+        status: 200,
+      }),
+    );
+    const gateway = new MetaWhatsAppGateway(createConfigService());
+
+    await gateway.sendTextMessage({
+      to: '7771683807',
+      text: 'Hola',
+    });
+
+    const requestBody = fetchSpy.mock.calls[0]?.[1]?.body;
+    if (typeof requestBody !== 'string') {
+      throw new Error('Expected a JSON string request body');
+    }
+    expect(JSON.parse(requestBody)).toMatchObject({
+      to: '527771683807',
+    });
+  });
 });
