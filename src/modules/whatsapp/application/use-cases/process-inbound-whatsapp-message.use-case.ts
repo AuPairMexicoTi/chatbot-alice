@@ -64,22 +64,18 @@ export class ProcessInboundWhatsAppMessageUseCase {
     await this.messageRepository.create({
       conversationId: conversation.id,
       direction: 'INBOUND',
-      type: payload.messageType,
+      type: payload.messageType === 'TEXT' ? 'TEXT' : 'UNKNOWN',
       providerMessageId: payload.messageId,
       text: payload.text,
       status: 'RECEIVED',
-      metadata: {},
+      metadata: { whatsAppMessageType: payload.messageType },
     });
-
-    if (payload.messageType === 'UNKNOWN') {
-      return;
-    }
 
     const flowResult = await this.conversationFlowStateService.advance(
       conversation.id,
       {
         text: payload.text,
-        messageType: payload.messageType === 'TEXT' ? 'TEXT' : 'IMAGE',
+        messageType: payload.messageType,
       },
       contact.phoneNumber,
     );

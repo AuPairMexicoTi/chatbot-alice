@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { JsonValue } from '@shared/domain/types/json.type';
+import type { FlowInput } from '@modules/conversation-flow/domain/conversation-flow.types';
 
 export interface ParsedWhatsAppWebhook {
   externalId: string;
@@ -9,7 +10,7 @@ export interface ParsedWhatsAppWebhook {
   contactName: string | null;
   from: string | null;
   messageId: string | null;
-  messageType: 'TEXT' | 'UNKNOWN';
+  messageType: FlowInput['messageType'];
   text: string | null;
   locale: string;
   payload: JsonValue;
@@ -33,11 +34,25 @@ export class WhatsAppWebhookParser {
       contactName: contact?.profile?.name ?? null,
       from: message?.from ?? null,
       messageId: message?.id ?? null,
-      messageType: message?.type === 'text' ? 'TEXT' : 'UNKNOWN',
+      messageType: this.messageType(message?.type),
       text: message?.text?.body ?? null,
       locale: 'es-MX',
       payload,
     };
+  }
+
+  private messageType(type: string | undefined): FlowInput['messageType'] {
+    const types: Record<string, FlowInput['messageType']> = {
+      text: 'TEXT',
+      image: 'IMAGE',
+      audio: 'AUDIO',
+      video: 'VIDEO',
+      document: 'DOCUMENT',
+      location: 'LOCATION',
+      sticker: 'STICKER',
+    };
+
+    return types[type ?? ''] ?? 'UNKNOWN';
   }
 
   private getFirstChangeValue(payload: JsonValue):

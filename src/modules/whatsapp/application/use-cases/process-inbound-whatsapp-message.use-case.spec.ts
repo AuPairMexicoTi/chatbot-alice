@@ -86,6 +86,50 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     expect(store.aiRuns.size).toBe(0);
   });
 
+  it('asks for text again when the candidate sends an image', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
+    );
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      ),
+      new QueueOutboundMessageUseCase(queue),
+    );
+
+    await useCase.execute({
+      ...incomingMessage('wamid.image.1', ''),
+      eventType: 'image',
+      messageType: 'IMAGE',
+      text: null,
+    });
+
+    const messages = [...store.messages.values()];
+    const inbound = messages.find((message) => message.direction === 'INBOUND');
+    const outbound = messages.find(
+      (message) => message.direction === 'OUTBOUND',
+    );
+    expect(inbound?.type).toBe('UNKNOWN');
+    expect(inbound?.metadata.whatsAppMessageType).toBe('IMAGE');
+    expect(outbound?.text).toContain('solo puedo leer mensajes de texto');
+    expect(queue.outboundJobs).toHaveLength(1);
+  });
+
   it('gives the flow precedence over auto replies on a new conversation', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);

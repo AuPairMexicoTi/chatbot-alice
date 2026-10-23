@@ -101,6 +101,32 @@ describe('ConversationFlowEngine', () => {
   });
 
   it.each([
+    'IMAGE',
+    'AUDIO',
+    'VIDEO',
+    'DOCUMENT',
+    'LOCATION',
+    'STICKER',
+    'UNKNOWN',
+  ] as const)(
+    'keeps the current question when receiving a %s message',
+    (messageType) => {
+      const state = {
+        ...engine.start(aupairFlowDefinition).state,
+        nodeId: 'capture-city',
+      };
+
+      const result = engine.advance(aupairFlowDefinition, state, {
+        text: null,
+        messageType,
+      });
+
+      expect(result.state).toEqual(state);
+      expect(result.messages[0]).toContain('solo puedo leer mensajes de texto');
+    },
+  );
+
+  it.each([
     ['name', 'Ruben 😎', 'Por favor escribe tu nombre completo'],
     ['name', '123', 'Por favor escribe tu nombre completo'],
     ['age', 'tengo 24 perritos', 'Por favor escribe solo tu edad'],
