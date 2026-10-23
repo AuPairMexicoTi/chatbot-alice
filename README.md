@@ -81,7 +81,8 @@ WhatsApp images (optional legacy assets):
 CRM welcome templates:
 
 - Set `WHATSAPP_WELCOME_TEMPLATE_NAME` to an approved Meta template name (for example, `bienvenida_registro`) and `WHATSAPP_WELCOME_TEMPLATE_LANGUAGE=es_MX`.
-- When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header and the lead name as `{{1}}`.
+- Set `WHATSAPP_WELCOME_TEMPLATE_USES_NAME_PARAMETER=true` only when the Meta template contains `{{1}}` for the lead name. For the menu-first template without variables, set it to `false` so ALICE sends no body parameter to Meta.
+- When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header. The menu-first template can list options 1–4; the candidate's numeric reply enters the matching ALICE flow node without requiring a greeting.
 - The `welcome_zapier_lead` auto-reply is provisioned by the database migration. It must remain active; its stored text is an administrative record, while WhatsApp sends the approved Meta template.
 - The template must only be triggered for leads that explicitly accepted WhatsApp communications.
 

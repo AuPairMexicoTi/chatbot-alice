@@ -95,7 +95,9 @@ export class SendWelcomeMessageUseCase {
           'whatsapp.welcomeTemplateLanguage',
           'es_MX',
         ),
-        templateBodyParameter: this.getTemplateBodyParameter(input.name),
+        ...(this.usesNameTemplateParameter()
+          ? { templateBodyParameter: this.getTemplateBodyParameter(input.name) }
+          : {}),
         ...(this.getWelcomeImageUrl(template.responseImageUrl)
           ? { imageUrl: this.getWelcomeImageUrl(template.responseImageUrl) }
           : {}),
@@ -125,6 +127,13 @@ export class SendWelcomeMessageUseCase {
     return (
       this.configService.get<string>('whatsapp.welcomeTemplateName', '').trim()
         .length > 0
+    );
+  }
+
+  private usesNameTemplateParameter(): boolean {
+    return this.configService.get<boolean>(
+      'whatsapp.welcomeTemplateUsesNameParameter',
+      true,
     );
   }
 

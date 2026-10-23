@@ -47,4 +47,50 @@ describe('SendOutboundWhatsAppMessageUseCase', () => {
     expect(updatedMessage?.status).toBe('SENT');
     expect(updatedMessage?.providerMessageId).not.toBeNull();
   });
+
+  it('sends a menu-first template without body parameters', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const gateway = new MockWhatsAppGateway();
+    const sendTemplateMessage = jest.spyOn(gateway, 'sendTemplateMessage');
+
+    const contact = await contactRepository.upsert({
+      externalId: '5215663633326',
+      name: 'Cliente Demo',
+      phoneNumber: '5215663633326',
+    });
+    const conversation = await conversationRepository.getOrCreateByContactId(
+      contact.id,
+      'es-MX',
+    );
+    const message = await messageRepository.create({
+      conversationId: conversation.id,
+      direction: 'OUTBOUND',
+      type: 'IMAGE',
+      providerMessageId: null,
+      text: 'Selecciona una opción.',
+      status: 'QUEUED',
+      metadata: {
+        responseSource: 'CRM_WELCOME_TEMPLATE',
+        templateName: 'bienvenida_menu',
+        templateLanguage: 'es_MX',
+        imageUrl: 'https://example.com/principal.jpeg',
+      },
+    });
+
+    const useCase = new SendOutboundWhatsAppMessageUseCase(
+      messageRepository,
+      contactRepository,
+      conversationRepository,
+      gateway,
+    );
+
+    await useCase.execute(message.id);
+
+    expect(sendTemplateMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ bodyParameters: [] }),
+    );
+  });
 });

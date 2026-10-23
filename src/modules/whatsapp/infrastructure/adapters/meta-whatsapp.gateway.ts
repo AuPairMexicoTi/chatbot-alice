@@ -86,15 +86,17 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
   async sendTemplateMessage(
     input: SendTemplateMessageInput,
   ): Promise<SendMessageResult> {
-    const components: Array<Record<string, unknown>> = [
-      {
+    const components: Array<Record<string, unknown>> = [];
+
+    if (input.bodyParameters.length > 0) {
+      components.push({
         type: 'body',
         parameters: input.bodyParameters.map((text) => ({
           type: 'text',
           text,
         })),
-      },
-    ];
+      });
+    }
 
     if (input.imageUrl) {
       components.unshift({
@@ -110,7 +112,7 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
       template: {
         name: input.templateName,
         language: { code: input.languageCode },
-        components,
+        ...(components.length > 0 ? { components } : {}),
       },
     });
   }

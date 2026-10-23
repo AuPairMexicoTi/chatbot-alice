@@ -65,12 +65,7 @@ export class SendOutboundWhatsAppMessageUseCase {
             message.metadata,
             'templateLanguage',
           ),
-          bodyParameters: [
-            this.getRequiredMetadataString(
-              message.metadata,
-              'templateBodyParameter',
-            ),
-          ],
+          bodyParameters: this.getTemplateBodyParameters(message.metadata),
           imageUrl: this.getRequiredImageUrl(message.metadata),
         })
       : message.type === 'IMAGE'
@@ -135,5 +130,13 @@ export class SendOutboundWhatsAppMessageUseCase {
     }
 
     return value;
+  }
+
+  private getTemplateBodyParameters(
+    metadata: Record<string, string | number | boolean | null>,
+  ): string[] {
+    const value = metadata.templateBodyParameter;
+
+    return typeof value === 'string' && value.trim().length > 0 ? [value] : [];
   }
 }

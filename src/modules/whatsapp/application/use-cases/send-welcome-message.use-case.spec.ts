@@ -13,7 +13,7 @@ import {
 } from './send-welcome-message.use-case';
 
 describe('SendWelcomeMessageUseCase', () => {
-  const buildUseCase = () => {
+  const buildUseCase = (whatsappConfig: Record<string, unknown> = {}) => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -30,7 +30,10 @@ describe('SendWelcomeMessageUseCase', () => {
       messageRepository,
       autoReplyRepository,
       queueOutboundMessageUseCase,
-      new ConfigService({ CHATBOT_PUBLIC_BASE_URL: '' }),
+      new ConfigService({
+        CHATBOT_PUBLIC_BASE_URL: '',
+        whatsapp: whatsappConfig,
+      }),
     );
 
     return {
@@ -114,6 +117,34 @@ describe('SendWelcomeMessageUseCase', () => {
 
     const message = await messageRepository.findById(result.messageId);
     expect(message?.text).toBe('Hola , bienvenida.');
+  });
+
+  it('does not attach a name parameter for a menu-first Meta template', async () => {
+    const { useCase, autoReplyRepository, messageRepository } = buildUseCase({
+      welcomeTemplateName: 'bienvenida_menu',
+      welcomeTemplateUsesNameParameter: false,
+    });
+
+    await autoReplyRepository.create({
+      key: WELCOME_AUTO_REPLY_KEY,
+      title: 'Bienvenida menú',
+      matchType: 'EXACT',
+      patterns: [],
+      responseText: 'Selecciona una opción: 1, 2, 3 o 4.',
+      responseImageUrl: null,
+      priority: 0,
+      isActive: true,
+      locale: 'es-MX',
+    });
+
+    const result = await useCase.execute({
+      phoneNumber: '5215500000003',
+      name: 'Ana',
+    });
+
+    const message = await messageRepository.findById(result.messageId);
+    expect(message?.metadata.responseSource).toBe('CRM_WELCOME_TEMPLATE');
+    expect(message?.metadata.templateBodyParameter).toBeUndefined();
   });
 
   it('ignores an inactive template and throws', async () => {

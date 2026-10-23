@@ -14,6 +14,8 @@ export const whatsappConfig = registerAs('whatsapp', () => ({
   welcomeTemplateName: process.env.WHATSAPP_WELCOME_TEMPLATE_NAME ?? '',
   welcomeTemplateLanguage:
     process.env.WHATSAPP_WELCOME_TEMPLATE_LANGUAGE ?? 'es_MX',
+  welcomeTemplateUsesNameParameter:
+    process.env.WHATSAPP_WELCOME_TEMPLATE_USES_NAME_PARAMETER !== 'false',
 }));
 
 export type WhatsAppConfig = ReturnType<typeof whatsappConfig>;
