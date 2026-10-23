@@ -33,7 +33,7 @@ describe('CreateFlowNodeUseCase', () => {
     const useCase = new CreateFlowNodeUseCase(repository);
 
     await expect(
-      useCase.execute({ id: 'menu', content: 'duplicate' }),
+      useCase.execute({ id: 'main-menu', content: 'duplicate' }),
     ).rejects.toBeInstanceOf(ApplicationError);
   });
 });

@@ -82,7 +82,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const outbound = [...store.messages.values()].find(
       (message) => message.direction === 'OUTBOUND',
     );
-    expect(outbound?.text).toContain('Países Disponibles');
+    expect(outbound?.text).toContain('Requisitos para ser Au Pair');
     expect(store.aiRuns.size).toBe(0);
   });
 
@@ -220,11 +220,11 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     );
 
     expect(outbound?.type).toBe('TEXT');
-    expect(outbound?.text).toContain('Países Disponibles');
+    expect(outbound?.text).toContain('Requisitos para ser Au Pair');
     expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
   });
 
-  it('hands off immediately when a candidate chooses to apply', async () => {
+  it('hands off only after a candidate confirms their profile is complete', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -255,6 +255,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     for (const [externalId, text] of [
       ['wamid.flow.1', 'Hola'],
       ['wamid.flow.2', '4'],
+      ['wamid.flow.3', '1'],
     ]) {
       await useCase.execute(incomingMessage(externalId, text));
     }
@@ -262,7 +263,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const handoffMessage = [...store.messages.values()].find(
       (message) =>
         message.direction === 'OUTBOUND' &&
-        message.text?.includes('Tu asesor asignado se pondrá en contacto'),
+        message.text?.includes('Gracias por completar tu perfil'),
     );
     expect(handoffMessage).toBeDefined();
   });

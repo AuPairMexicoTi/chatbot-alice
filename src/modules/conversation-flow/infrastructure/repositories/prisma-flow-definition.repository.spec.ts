@@ -2,7 +2,7 @@ import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.ser
 import { PrismaFlowDefinitionRepository } from './prisma-flow-definition.repository';
 
 describe('PrismaFlowDefinitionRepository', () => {
-  it('uses the canonical flow and public image URLs when APM has no saved nodes', async () => {
+  it('uses the canonical PDF flow when APM has no saved nodes', async () => {
     const prisma = {
       flowNode: {
         findMany: jest.fn().mockResolvedValue([]),
@@ -15,12 +15,10 @@ describe('PrismaFlowDefinitionRepository', () => {
 
     const definition = await repository.getDefinition();
 
-    expect(definition.nodes.menu.imageUrl).toBe(
-      'https://bot.aupairmexico.com/api/v1/assets/principal.jpeg',
+    expect(definition.entryNodeId).toBe('main-menu');
+    expect(definition.nodes.requirements.content).toContain(
+      'Requisitos para ser Au Pair',
     );
-    expect(definition.nodes.germany.imageUrl).toBe(
-      'https://bot.aupairmexico.com/api/v1/assets/alemania.jpeg',
-    );
-    expect(definition.nodes.denmark.imageUrl).toBeUndefined();
+    expect(definition.nodes['contact-advisor'].imageUrl).toBeUndefined();
   });
 });

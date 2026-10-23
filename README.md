@@ -65,10 +65,15 @@ CRM profiling-link integration:
 - When a candidate completes the ALICE intake, APM creates or reuses the lead and returns that candidate's profiling link. ALICE sends that link before the human-advisor confirmation.
 - When the candidate requests an advisor, ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM creates an immediate WhatsApp follow-up in the assigned mailbox.
 
-WhatsApp images:
+Guided Au Pair flow:
+
+- `AUPAIR_PROFILING_LINK` is the public link ALICE sends when a candidate chooses **Contactar a mi asesor**. It is required in production.
+- The human handoff occurs only after the candidate selects **Ya llené mi perfil / Quiero hablar con un asesor**.
+
+WhatsApp images (optional legacy assets):
 
 - `CHATBOT_PUBLIC_BASE_URL` must be the public HTTPS origin of this backend (for example, `https://alice.example.com`). Meta downloads images from `/api/v1/assets/<filename>`.
-- The initial menu and lead welcome message use `principal.jpeg`; country cards attach the available country image for Germany, Belgium, United States, France, and Italy.
+- The CRM welcome template may use `principal.jpeg`; the current guided flow defined in the approved script is text-only.
 - Image files live in `public/images`. Meta must be able to reach the configured URL without authentication.
 - If APM has not yet saved flow nodes, ALICE uses its built-in flow and its public image URLs as a safe fallback. Once a node is saved from APM, that node's text and image take precedence; a removed image stays removed.
 

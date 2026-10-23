@@ -34,6 +34,11 @@ export const envValidationSchema = Joi.object({
     .integer()
     .min(1)
     .required(),
+  AUPAIR_PROFILING_LINK: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().uri().required(),
+    otherwise: Joi.string().uri().allow('').default(''),
+  }),
   WHATSAPP_PROVIDER: Joi.string().valid('mock', 'meta').required(),
   WHATSAPP_GRAPH_API_BASE_URL: Joi.string().uri().required(),
   WHATSAPP_GRAPH_API_VERSION: Joi.when('WHATSAPP_PROVIDER', {

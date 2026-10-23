@@ -29,6 +29,9 @@ export const CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS = Symbol(
   'CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS',
 );
 export const CONVERSATION_FLOW_NOW = Symbol('CONVERSATION_FLOW_NOW');
+export const CONVERSATION_FLOW_PROFILING_LINK = Symbol(
+  'CONVERSATION_FLOW_PROFILING_LINK',
+);
 
 const defaultInactivityTimeoutMs = 30 * 60 * 1000;
 
@@ -44,6 +47,8 @@ export class ConversationFlowStateService {
     private readonly now: () => Date = () => new Date(),
     @Inject(FLOW_DEFINITION_REPOSITORY)
     private readonly flowDefinitionRepository: FlowDefinitionRepository = staticFlowDefinitionRepository,
+    @Inject(CONVERSATION_FLOW_PROFILING_LINK)
+    private readonly profilingLink = '',
   ) {}
 
   async advance(conversationId: string, input: FlowInput): Promise<FlowResult> {
@@ -57,12 +62,20 @@ export class ConversationFlowStateService {
     // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
     // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
     // toda la bienvenida; un saludo explícito continúa mostrando el menú.
-    const initialState = this.engine.start(definition).state;
-    const result = this.engine.advance(
-      definition,
-      shouldRestart ? initialState : record.state,
-      input,
-    );
+    const initialState = {
+      ...this.engine.start(definition).state,
+      variables: { profilingLink: this.profilingLink },
+    };
+    const currentState = shouldRestart
+      ? initialState
+      : {
+          ...record.state,
+          variables: {
+            profilingLink: this.profilingLink,
+            ...record.state.variables,
+          },
+        };
+    const result = this.engine.advance(definition, currentState, input);
     await this.repository.save(conversationId, result.state);
     return result;
   }

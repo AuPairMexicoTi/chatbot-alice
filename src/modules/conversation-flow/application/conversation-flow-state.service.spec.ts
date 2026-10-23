@@ -18,7 +18,7 @@ describe('ConversationFlowStateService', () => {
   it('restarts a flow after 30 minutes of inactivity', async () => {
     const repository = repositoryWith({
       state: {
-        nodeId: 'countries',
+        nodeId: 'requirements',
         status: 'ACTIVE',
         attempts: 0,
         variables: {},
@@ -33,14 +33,14 @@ describe('ConversationFlowStateService', () => {
 
     const result = await service.advance('conversation-1', textInput);
 
-    expect(result.state.nodeId).toBe('menu');
+    expect(result.state.nodeId).toBe('main-menu');
     expect(result.messages[0]).toContain('bienvenida');
   });
 
   it('continues an active flow before the inactivity timeout', async () => {
     const repository = repositoryWith({
       state: {
-        nodeId: 'countries',
+        nodeId: 'requirements',
         status: 'ACTIVE',
         attempts: 0,
         variables: {},
@@ -55,7 +55,7 @@ describe('ConversationFlowStateService', () => {
 
     const result = await service.advance('conversation-1', textInput);
 
-    expect(result.state.nodeId).toBe('countries');
+    expect(result.state.nodeId).toBe('requirements');
     expect(result.messages[0]).toContain('No entendí');
   });
 
@@ -80,7 +80,7 @@ describe('ConversationFlowStateService', () => {
   it('restarts a finished flow when the candidate sends another message', async () => {
     const repository = repositoryWith({
       state: {
-        nodeId: 'handoff',
+        nodeId: 'advisor-confirmation',
         status: 'AWAITING_HUMAN',
         attempts: 0,
         variables: {},
@@ -95,7 +95,7 @@ describe('ConversationFlowStateService', () => {
 
     const result = await service.advance('conversation-1', textInput);
 
-    expect(result.state.nodeId).toBe('menu');
+    expect(result.state.nodeId).toBe('main-menu');
     expect(result.state.status).toBe('ACTIVE');
     expect(result.messages[0]).toContain('bienvenida');
   });

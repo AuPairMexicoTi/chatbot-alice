@@ -49,7 +49,7 @@ export class ConversationFlowEngine {
     if (['asesor', 'humano', 'ayuda'].includes(normalized))
       return this.enter(definition, {
         ...state,
-        nodeId: 'handoff',
+        nodeId: this.terminalNodeId(definition, 'HANDOFF'),
         attempts: 0,
       });
     if (['menu', 'inicio'].includes(normalized))
@@ -61,7 +61,7 @@ export class ConversationFlowEngine {
     if (['salir', 'cancelar'].includes(normalized))
       return this.enter(definition, {
         ...state,
-        nodeId: 'closed',
+        nodeId: this.terminalNodeId(definition, 'CLOSED'),
         attempts: 0,
       });
 
@@ -72,34 +72,17 @@ export class ConversationFlowEngine {
       option.split('|').map(normalize).includes(normalized),
     )?.[1];
     if (target) {
-      const countryInterestByNode: Record<string, string> = {
-        germany: 'Alemania',
-        belgium: 'Bélgica',
-        denmark: 'Dinamarca',
-        usa: 'Estados Unidos',
-        france: 'Francia',
-        italy: 'Italia',
-        netherlands: 'Países Bajos',
-        sweden: 'Suecia',
-        switzerland: 'Suiza',
-      };
       return this.enter(definition, {
         ...state,
         nodeId: target,
         attempts: 0,
-        variables: countryInterestByNode[target]
-          ? {
-              ...state.variables,
-              countryInterest: countryInterestByNode[target],
-            }
-          : state.variables,
       });
     }
     const attempts = state.attempts + 1;
     if (attempts >= definition.maxAttempts)
       return this.enter(definition, {
         ...state,
-        nodeId: 'handoff',
+        nodeId: this.terminalNodeId(definition, 'HANDOFF'),
         attempts: 0,
       });
     return this.reply(definition, { ...state, attempts }, [
@@ -160,7 +143,7 @@ export class ConversationFlowEngine {
           : state;
     return {
       state: nextState,
-      messages: [node.content],
+      messages: [this.interpolate(node.content, state.variables)],
       requestHandoff: node.terminal === 'HANDOFF',
       imageUrl: node.imageUrl,
     };
@@ -198,5 +181,30 @@ export class ConversationFlowEngine {
       (greeting) =>
         normalized === greeting || normalized.startsWith(`${greeting} `),
     );
+  }
+
+  private terminalNodeId(
+    definition: FlowDefinition,
+    terminal: NonNullable<FlowDefinition['nodes'][string]['terminal']>,
+  ): string {
+    const preferredNodeId =
+      terminal === 'HANDOFF' ? 'human-handoff' : 'closed-pdf';
+    if (definition.nodes[preferredNodeId]?.terminal === terminal)
+      return preferredNodeId;
+    const node = Object.values(definition.nodes).find(
+      (candidate) => candidate.terminal === terminal,
+    );
+    if (!node) throw new Error(`Flow definition does not include ${terminal}`);
+    return node.id;
+  }
+
+  private interpolate(
+    content: string,
+    variables: Record<string, string>,
+  ): string {
+    return content.replace(/\{\{(\w+)\}\}/gu, (_match, name: string) => {
+      const value = variables[name];
+      return value ?? '';
+    });
   }
 }
