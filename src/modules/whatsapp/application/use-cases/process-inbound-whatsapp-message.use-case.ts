@@ -18,7 +18,7 @@ import { ParsedWhatsAppWebhook } from '../../infrastructure/parsers/whatsapp-web
 import { ConversationFlowStateService } from '@modules/conversation-flow/application/conversation-flow-state.service';
 import {
   APM_HANDOFF_PORT,
-  ApmAdvisor,
+  ApmHandoffResult,
   ApmHandoffPort,
 } from '@modules/conversation-flow/application/ports/apm-handoff.port';
 import { RequestHumanHandoffUseCase } from './request-human-handoff.use-case';
@@ -83,16 +83,16 @@ export class ProcessInboundWhatsAppMessageUseCase {
       },
       contact.phoneNumber,
     );
-    let advisor: ApmAdvisor | undefined;
+    let handoffResult: ApmHandoffResult | undefined;
     if (flowResult.requestHandoff) {
       const values = flowResult.state.variables;
       if (this.apmHandoffPort) {
-        advisor = await this.apmHandoffPort.request({
+        handoffResult = await this.apmHandoffPort.request({
           phone: contact.phoneNumber,
           email: values.email,
           reason: 'La candidata solicitó hablar con un asesor desde WhatsApp.',
         });
-        flowResult.messages = [this.advisorMessage(advisor)];
+        flowResult.messages = [this.advisorMessage(handoffResult)];
       }
       await this.requestHumanHandoffUseCase?.execute(
         conversation.id,
@@ -103,7 +103,10 @@ export class ProcessInboundWhatsAppMessageUseCase {
       await this.conversationInactivityService?.schedule(conversation.id);
     else await this.conversationInactivityService?.cancel(conversation.id);
     for (const text of flowResult.messages) {
-      const imageUrl = advisor?.imageUrl ?? flowResult.imageUrl ?? null;
+      const imageUrl =
+        handoffResult?.routing === 'NEW_ASSIGNMENT'
+          ? (handoffResult.advisor.imageUrl ?? flowResult.imageUrl ?? null)
+          : (flowResult.imageUrl ?? null);
       const hasImage = Boolean(imageUrl);
       const outboundMessage = await this.messageRepository.create({
         conversationId: conversation.id,
@@ -164,7 +167,14 @@ export class ProcessInboundWhatsAppMessageUseCase {
     await this.queueOutboundMessageUseCase.execute(outboundMessage.id);
   }
 
-  private advisorMessage(advisor: ApmAdvisor): string {
+  private advisorMessage(handoff: ApmHandoffResult): string {
+    if (handoff.routing === 'ALREADY_ASSIGNED') {
+      const mailboxLink = handoff.mailboxWhatsAppLink
+        ? `\n\n📲 Solicita la reasignación aquí:\n👉 ${handoff.mailboxWhatsAppLink}`
+        : '';
+      return `💖 Ya cuentas con un asesor asignado. Para respetar tu seguimiento, no haremos cambios automáticos.${mailboxLink}\n\nEl Buzón de Leads revisará tu solicitud de reasignación. 🔔`;
+    }
+    const advisor = handoff.advisor;
     if (advisor.isMailbox)
       return '¡Excelente! 🙌✨ Un asesor se pondrá en contacto contigo por este medio o por llamada telefónica. 📞\n\n¡Activa tus notificaciones! 🔔💖';
     const link = advisor.whatsappLink

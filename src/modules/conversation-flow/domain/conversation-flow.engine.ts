@@ -100,19 +100,13 @@ export class ConversationFlowEngine {
     capture: NonNullable<FlowDefinition['nodes'][string]['capture']>,
     value: string,
   ): FlowResult {
-    const normalized = value.trim();
-    const age = this.extractAge(normalized);
-    const valid =
-      capture === 'age'
-        ? age !== null && age >= 18 && age <= 29
-        : capture === 'email'
-          ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
-          : normalized.length > 1;
-    if (!valid)
+    const trimmedValue = value.trim();
+    const validationError = this.captureValidationError(capture, trimmedValue);
+    if (validationError)
       return this.reply(
         definition,
         { ...state, attempts: state.attempts + 1 },
-        [`Necesito un dato válido. ${definition.nodes[state.nodeId].content}`],
+        [validationError],
       );
     const order: Record<typeof capture, string> = {
       name: 'capture-age',
@@ -127,13 +121,96 @@ export class ConversationFlowEngine {
       attempts: 0,
       variables: {
         ...state.variables,
-        [capture]: capture === 'age' ? String(age) : normalized,
+        [capture]:
+          capture === 'age'
+            ? String(this.extractAge(trimmedValue))
+            : trimmedValue,
       },
     });
   }
 
+  private captureValidationError(
+    capture: NonNullable<FlowDefinition['nodes'][string]['capture']>,
+    value: string,
+  ): string | null {
+    switch (capture) {
+      case 'name':
+        return this.isValidFullName(value)
+          ? null
+          : 'Por favor escribe tu nombre completo, solo con letras y espacios. Ejemplo: Ana López García. ✍️';
+      case 'age':
+        return this.isValidAge(value)
+          ? null
+          : 'Por favor escribe solo tu edad en número, por ejemplo: 24 o 24 años. Recuerda que el programa es para personas de 18 a 29 años. 🎂';
+      case 'email':
+        return this.isValidEmail(value)
+          ? null
+          : 'Por favor escribe un correo electrónico válido, sin espacios ni emojis. Ejemplo: nombre@correo.com 📧';
+      case 'city':
+        return this.isValidCity(value)
+          ? null
+          : 'Por favor escribe el nombre de tu ciudad, solo con letras y espacios. Ejemplo: Cuernavaca Morelos. 📍';
+      case 'englishLevel':
+        return this.isValidEnglishLevel(value)
+          ? null
+          : 'Por favor indica tu nivel de inglés o certificación. Ejemplos: básico, intermedio, avanzado, B1, IELTS o TOEFL 80. 🗣️';
+    }
+  }
+
+  private isValidFullName(value: string): boolean {
+    if (!this.hasOnlyNameCharacters(value) || this.isGenericAnswer(value))
+      return false;
+    return (
+      value.split(/\s+/u).filter((part) => /\p{L}/u.test(part)).length >= 2
+    );
+  }
+
+  private isValidAge(value: string): boolean {
+    return /^(?:1[89]|2[0-9])(?:\s+anos?)?$/u.test(normalize(value));
+  }
+
+  private isValidEmail(value: string): boolean {
+    return /^(?!.*\.\.)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u.test(
+      value,
+    );
+  }
+
+  private isValidCity(value: string): boolean {
+    return (
+      this.hasOnlyNameCharacters(value) &&
+      value.replace(/[^\p{L}\p{M}]/gu, '').length >= 2 &&
+      !this.isGenericAnswer(value)
+    );
+  }
+
+  private isValidEnglishLevel(value: string): boolean {
+    if (!/^[\p{L}\p{M}\d .,'’:/-]{2,100}$/u.test(value)) return false;
+    return /\b(?:a[1-2]|b[1-2]|c[1-2]|basico|intermedio|avanzado|principiante|elemental|pre-intermedio|upper intermediate|intermediate|advanced|toefl|ielts|cambridge|toeic|duolingo|certificacion|certificado)\b/u.test(
+      normalize(value),
+    );
+  }
+
+  private hasOnlyNameCharacters(value: string): boolean {
+    return /^[\p{L}\p{M}][\p{L}\p{M} '’.-]*$/u.test(value);
+  }
+
+  private isGenericAnswer(value: string): boolean {
+    return [
+      'hola',
+      'si',
+      'no',
+      'no se',
+      'nose',
+      'ninguna',
+      'n a',
+      'na',
+      'asdf',
+      'test',
+    ].includes(normalize(value));
+  }
+
   private extractAge(value: string): number | null {
-    const match = value.match(/\b(\d{1,2})\b/u);
+    const match = normalize(value).match(/^(\d{1,2})(?:\s+anos?)?$/u);
     return match ? Number(match[1]) : null;
   }
 

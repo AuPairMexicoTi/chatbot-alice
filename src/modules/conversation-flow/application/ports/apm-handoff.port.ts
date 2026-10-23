@@ -4,6 +4,9 @@ export type RequestApmHandoffInput = {
   reason: string;
 };
 
+export type ApmHandoffRouting =
+  'NEW_ASSIGNMENT' | 'ALREADY_ASSIGNED' | 'MAILBOX';
+
 export type ApmAdvisor = {
   name: string | null;
   whatsappLink: string | null;
@@ -11,8 +14,14 @@ export type ApmAdvisor = {
   isMailbox: boolean;
 };
 
+export type ApmHandoffResult = {
+  routing: ApmHandoffRouting;
+  advisor: ApmAdvisor;
+  mailboxWhatsAppLink: string | null;
+};
+
 export interface ApmHandoffPort {
-  request(input: RequestApmHandoffInput): Promise<ApmAdvisor>;
+  request(input: RequestApmHandoffInput): Promise<ApmHandoffResult>;
 }
 
 export const APM_HANDOFF_PORT = Symbol('APM_HANDOFF_PORT');

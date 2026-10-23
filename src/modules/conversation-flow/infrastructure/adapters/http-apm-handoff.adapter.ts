@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import {
-  ApmAdvisor,
+  ApmHandoffResult,
   ApmHandoffPort,
   RequestApmHandoffInput,
 } from '../../application/ports/apm-handoff.port';
@@ -8,7 +8,7 @@ import {
 export class HttpApmHandoffAdapter implements ApmHandoffPort {
   constructor(private readonly config: ConfigService) {}
 
-  async request(input: RequestApmHandoffInput): Promise<ApmAdvisor> {
+  async request(input: RequestApmHandoffInput): Promise<ApmHandoffResult> {
     const url = this.config.getOrThrow<string>('crm.aliceHandoffsUrl');
     const secret = this.config.getOrThrow<string>('crm.aliceIntegrationSecret');
     const response = await fetch(url, {
@@ -27,20 +27,28 @@ export class HttpApmHandoffAdapter implements ApmHandoffPort {
       );
     }
     const body: unknown = await response.json();
-    if (!this.hasAdvisor(body))
+    if (!this.hasHandoffResult(body))
       throw new Error('APM handoff response is invalid');
-    return body.data.advisor;
+    return {
+      routing: body.data.routing,
+      advisor: body.data.advisor,
+      mailboxWhatsAppLink: body.data.mailboxWhatsAppLink,
+    };
   }
 
-  private hasAdvisor(
+  private hasHandoffResult(
     value: unknown,
-  ): value is { data: { advisor: ApmAdvisor } } {
+  ): value is { data: ApmHandoffResult } {
     if (
       !value ||
       typeof value !== 'object' ||
       !('data' in value) ||
       !value.data ||
       typeof value.data !== 'object' ||
+      !('routing' in value.data) ||
+      !['NEW_ASSIGNMENT', 'ALREADY_ASSIGNED', 'MAILBOX'].includes(
+        value.data.routing as string,
+      ) ||
       !('advisor' in value.data) ||
       !value.data.advisor ||
       typeof value.data.advisor !== 'object'
@@ -56,7 +64,10 @@ export class HttpApmHandoffAdapter implements ApmHandoffPort {
       'imageUrl' in advisor &&
       (typeof advisor.imageUrl === 'string' || advisor.imageUrl === null) &&
       'isMailbox' in advisor &&
-      typeof advisor.isMailbox === 'boolean'
+      typeof advisor.isMailbox === 'boolean' &&
+      'mailboxWhatsAppLink' in value.data &&
+      (typeof value.data.mailboxWhatsAppLink === 'string' ||
+        value.data.mailboxWhatsAppLink === null)
     );
   }
 }

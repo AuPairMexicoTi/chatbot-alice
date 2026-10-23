@@ -64,6 +64,7 @@ CRM profiling-link integration:
 - `CRM_ALICE_INTEGRATION_SECRET` must match APM's integration secret.
 - When a candidate completes the ALICE intake, APM creates or reuses the lead and returns that candidate's profiling link. ALICE sends that link before the human-advisor confirmation.
 - When the candidate requests an advisor, ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM creates an immediate WhatsApp follow-up in the assigned mailbox.
+- APM is the source of truth for lead ownership. If a lead already has an advisor, ALICE keeps that assignment intact and sends the candidate to the Leads Mailbox WhatsApp link to request reassignment. An existing mailbox assignment also remains unchanged; only new or unassigned leads enter automatic distribution.
 
 Guided Au Pair flow:
 

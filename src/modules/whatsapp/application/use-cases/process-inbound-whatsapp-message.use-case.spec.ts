@@ -224,7 +224,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
   });
 
-  it('hands off only after a candidate confirms their profile is complete', async () => {
+  it('keeps an existing advisor assignment and directs reassignment requests to the mailbox', async () => {
     const store = new InMemoryStore();
     const contactRepository = new InMemoryContactRepository(store);
     const conversationRepository = new InMemoryConversationRepository(store);
@@ -236,6 +236,18 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       handoffRepository,
       conversationRepository,
     );
+    const apmHandoffPort = {
+      request: jest.fn().mockResolvedValue({
+        routing: 'ALREADY_ASSIGNED' as const,
+        advisor: {
+          name: 'Asesor existente',
+          whatsappLink: 'https://wa.me/5215550000000',
+          imageUrl: 'https://crm.example/advisor.jpg',
+          isMailbox: false,
+        },
+        mailboxWhatsAppLink: 'https://wa.me/5215551111111',
+      }),
+    };
     const useCase = new ProcessInboundWhatsAppMessageUseCase(
       contactRepository,
       conversationRepository,
@@ -260,6 +272,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
         },
       ),
       handoffUseCase,
+      apmHandoffPort,
     );
 
     for (const [externalId, text] of [
@@ -278,8 +291,12 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     const handoffMessage = [...store.messages.values()].find(
       (message) =>
         message.direction === 'OUTBOUND' &&
-        message.text?.includes('Gracias por completar tu perfil'),
+        message.text?.includes('Ya cuentas con un asesor asignado'),
     );
     expect(handoffMessage).toBeDefined();
+    expect(handoffMessage?.text).toContain('https://wa.me/5215551111111');
+    expect(handoffMessage?.text).not.toContain('Asesor existente');
+    expect(handoffMessage?.type).toBe('TEXT');
+    expect(apmHandoffPort.request).toHaveBeenCalledTimes(1);
   });
 });

@@ -100,6 +100,63 @@ describe('ConversationFlowEngine', () => {
     expect(result.state.nodeId).toBe('main-menu');
   });
 
+  it.each([
+    ['name', 'Ruben 😎', 'Por favor escribe tu nombre completo'],
+    ['name', '123', 'Por favor escribe tu nombre completo'],
+    ['age', 'tengo 24 perritos', 'Por favor escribe solo tu edad'],
+    ['age', '24 🎂', 'Por favor escribe solo tu edad'],
+    [
+      'email',
+      'ana😎@correo.com',
+      'Por favor escribe un correo electrónico válido',
+    ],
+    ['city', 'Cuernavaca 🔥', 'Por favor escribe el nombre de tu ciudad'],
+    ['city', '123', 'Por favor escribe el nombre de tu ciudad'],
+    ['englishLevel', 'muy bien 😍', 'Por favor indica tu nivel de inglés'],
+    ['englishLevel', '123', 'Por favor indica tu nivel de inglés'],
+  ])(
+    'rejects invalid %s captures without leaving the current question',
+    (capture, answer, expectedMessage) => {
+      const nodeIdByCapture = {
+        name: 'contact-advisor',
+        age: 'capture-age',
+        email: 'capture-email',
+        city: 'capture-city',
+        englishLevel: 'capture-english',
+      } as const;
+      const state = {
+        ...engine.start(aupairFlowDefinition).state,
+        nodeId: nodeIdByCapture[capture as keyof typeof nodeIdByCapture],
+      };
+
+      const result = engine.advance(aupairFlowDefinition, state, text(answer));
+
+      expect(result.state.nodeId).toBe(state.nodeId);
+      expect(result.messages[0]).toContain(expectedMessage);
+    },
+  );
+
+  it.each([
+    'Intermedio',
+    'B1',
+    'certificación TOEFL 80',
+    'avanzado con certificación',
+  ])('accepts a meaningful free-form English level: %s', (englishLevel) => {
+    const state = {
+      ...engine.start(aupairFlowDefinition).state,
+      nodeId: 'capture-english',
+    };
+
+    const result = engine.advance(
+      aupairFlowDefinition,
+      state,
+      text(englishLevel),
+    );
+
+    expect(result.state.nodeId).toBe('profiling-link');
+    expect(result.state.variables.englishLevel).toBe(englishLevel);
+  });
+
   it('uses the human-handoff message for a global advisor request', () => {
     const result = engine.advance(
       aupairFlowDefinition,

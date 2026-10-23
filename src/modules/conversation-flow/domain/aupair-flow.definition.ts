@@ -66,7 +66,8 @@ export const aupairFlowDefinition: FlowDefinition = {
     },
     'capture-english': {
       id: 'capture-english',
-      content: 'Por último, ¿cuál es tu nivel de inglés? 🗣️',
+      content:
+        'Por último, ¿cuál es tu nivel de inglés o certificación? 🗣️\n\nPuedes responder, por ejemplo: básico, intermedio, avanzado, B1, IELTS o TOEFL 80.',
       capture: 'englishLevel',
     },
     'profiling-link': {
