@@ -67,7 +67,7 @@ CRM profiling-link integration:
 
 Guided Au Pair flow:
 
-- `AUPAIR_PROFILING_LINK` is the public link ALICE sends when a candidate chooses **Contactar a mi asesor**. It is required in production.
+- When a candidate completes the WhatsApp intake, ALICE calls APM to create or reuse the lead and sends the unique profiling link returned by APM.
 - The human handoff occurs only after the candidate selects **Ya llené mi perfil / Quiero hablar con un asesor**.
 
 WhatsApp images (optional legacy assets):

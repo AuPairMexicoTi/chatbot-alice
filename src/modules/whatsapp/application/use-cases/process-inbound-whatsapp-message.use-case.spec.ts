@@ -248,14 +248,29 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
         [new RequestHumanHandoffTool(handoffUseCase)],
       ),
       new QueueOutboundMessageUseCase(queue),
-      new ConversationFlowStateService(),
+      new ConversationFlowStateService(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+          createOrFind: jest.fn().mockResolvedValue({
+            profilingLink: 'https://crm.example/perfilacion/encrypted-lead-id',
+          }),
+        },
+      ),
       handoffUseCase,
     );
 
     for (const [externalId, text] of [
       ['wamid.flow.1', 'Hola'],
       ['wamid.flow.2', '4'],
-      ['wamid.flow.3', '1'],
+      ['wamid.flow.3', 'Ana López'],
+      ['wamid.flow.4', '29'],
+      ['wamid.flow.5', 'ana@example.com'],
+      ['wamid.flow.6', 'Guadalajara'],
+      ['wamid.flow.7', 'Intermedio'],
+      ['wamid.flow.8', '1'],
     ]) {
       await useCase.execute(incomingMessage(externalId, text));
     }

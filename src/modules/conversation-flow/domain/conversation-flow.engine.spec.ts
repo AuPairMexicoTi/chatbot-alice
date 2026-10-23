@@ -35,25 +35,51 @@ describe('ConversationFlowEngine', () => {
     expect(result.messages[0]).toContain(expectedContent);
   });
 
-  it('shows the profiling link and waits for explicit confirmation before handoff', () => {
-    const initialState = {
-      ...engine.start(aupairFlowDefinition).state,
-      variables: { profilingLink: 'https://aupair.example/perfilacion' },
-    };
-    const contact = engine.advance(
+  it('captures the candidate data before showing the profiling link', () => {
+    let contact = engine.advance(
       aupairFlowDefinition,
-      initialState,
+      engine.start(aupairFlowDefinition).state,
       text('4'),
     );
 
     expect(contact.state.nodeId).toBe('contact-advisor');
     expect(contact.state.status).toBe('ACTIVE');
     expect(contact.requestHandoff).toBe(false);
-    expect(contact.messages[0]).toContain('https://aupair.example/perfilacion');
+
+    for (const answer of [
+      'Ana López',
+      '29',
+      'ana@example.com',
+      'Guadalajara',
+      'Intermedio',
+    ])
+      contact = engine.advance(
+        aupairFlowDefinition,
+        contact.state,
+        text(answer),
+      );
+
+    expect(contact.state.nodeId).toBe('profiling-link');
+    expect(contact.state.variables).toMatchObject({
+      name: 'Ana López',
+      age: '29',
+      email: 'ana@example.com',
+      city: 'Guadalajara',
+      englishLevel: 'Intermedio',
+    });
+
+    const profile = engine.present(aupairFlowDefinition, {
+      ...contact.state,
+      variables: {
+        ...contact.state.variables,
+        profilingLink: 'https://aupair.example/perfilacion',
+      },
+    });
+    expect(profile.messages[0]).toContain('https://aupair.example/perfilacion');
 
     const confirmation = engine.advance(
       aupairFlowDefinition,
-      contact.state,
+      profile.state,
       text('1'),
     );
     expect(confirmation.state.nodeId).toBe('advisor-confirmation');
@@ -67,7 +93,7 @@ describe('ConversationFlowEngine', () => {
   it('returns to the menu from the profile step', () => {
     const state = {
       ...engine.start(aupairFlowDefinition).state,
-      nodeId: 'contact-advisor',
+      nodeId: 'profiling-link',
     };
     const result = engine.advance(aupairFlowDefinition, state, text('2'));
 

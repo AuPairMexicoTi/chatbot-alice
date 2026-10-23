@@ -81,6 +81,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
         text: payload.text,
         messageType: payload.messageType === 'TEXT' ? 'TEXT' : 'IMAGE',
       },
+      contact.phoneNumber,
     );
     let advisor: ApmAdvisor | undefined;
     if (flowResult.requestHandoff) {

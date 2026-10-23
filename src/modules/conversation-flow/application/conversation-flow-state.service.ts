@@ -11,6 +11,7 @@ import { ConversationFlowEngine } from '../domain/conversation-flow.engine';
 import { aupairFlowDefinition } from '../domain/aupair-flow.definition';
 import { FlowInput, FlowResult } from '../domain/conversation-flow.types';
 import { InMemoryConversationFlowStateRepository } from '../infrastructure/repositories/in-memory-conversation-flow-state.repository';
+import { APM_LEADS_PORT, ApmLeadsPort } from './ports/apm-leads.port';
 
 // Respaldo usado cuando no se inyecta un FlowDefinitionRepository explícito
 // (ej. en tests que construyen el servicio directamente) — mantiene el
@@ -29,9 +30,6 @@ export const CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS = Symbol(
   'CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS',
 );
 export const CONVERSATION_FLOW_NOW = Symbol('CONVERSATION_FLOW_NOW');
-export const CONVERSATION_FLOW_PROFILING_LINK = Symbol(
-  'CONVERSATION_FLOW_PROFILING_LINK',
-);
 
 const defaultInactivityTimeoutMs = 30 * 60 * 1000;
 
@@ -47,11 +45,15 @@ export class ConversationFlowStateService {
     private readonly now: () => Date = () => new Date(),
     @Inject(FLOW_DEFINITION_REPOSITORY)
     private readonly flowDefinitionRepository: FlowDefinitionRepository = staticFlowDefinitionRepository,
-    @Inject(CONVERSATION_FLOW_PROFILING_LINK)
-    private readonly profilingLink = '',
+    @Inject(APM_LEADS_PORT)
+    private readonly apmLeadsPort?: ApmLeadsPort,
   ) {}
 
-  async advance(conversationId: string, input: FlowInput): Promise<FlowResult> {
+  async advance(
+    conversationId: string,
+    input: FlowInput,
+    phoneNumber?: string,
+  ): Promise<FlowResult> {
     const record = await this.repository.findByConversationId(conversationId);
     const shouldRestart =
       !record ||
@@ -62,20 +64,33 @@ export class ConversationFlowStateService {
     // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
     // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
     // toda la bienvenida; un saludo explícito continúa mostrando el menú.
-    const initialState = {
-      ...this.engine.start(definition).state,
-      variables: { profilingLink: this.profilingLink },
-    };
+    const initialState = this.engine.start(definition).state;
     const currentState = shouldRestart
       ? initialState
       : {
           ...record.state,
-          variables: {
-            profilingLink: this.profilingLink,
-            ...record.state.variables,
-          },
+          variables: record.state.variables,
         };
-    const result = this.engine.advance(definition, currentState, input);
+    let result = this.engine.advance(definition, currentState, input);
+    if (result.state.nodeId === 'profiling-link') {
+      if (!phoneNumber)
+        throw new Error('Phone number is required to create an APM lead');
+      if (!this.apmLeadsPort)
+        throw new Error('APM leads port is not configured');
+      const values = result.state.variables;
+      const lead = await this.apmLeadsPort.createOrFind({
+        name: values.name,
+        age: Number(values.age),
+        phone: phoneNumber,
+        email: values.email,
+        city: values.city,
+        englishLevel: values.englishLevel,
+      });
+      result = this.engine.present(definition, {
+        ...result.state,
+        variables: { ...values, profilingLink: lead.profilingLink },
+      });
+    }
     await this.repository.save(conversationId, result.state);
     return result;
   }

@@ -99,4 +99,60 @@ describe('ConversationFlowStateService', () => {
     expect(result.state.status).toBe('ACTIVE');
     expect(result.messages[0]).toContain('bienvenida');
   });
+
+  it('creates or finds the lead and sends the unique profiling link', async () => {
+    let stored: ConversationFlowStateRecord | null = null;
+    const repository: ConversationFlowStateRepository = {
+      findByConversationId: async () => stored,
+      save: async (
+        _conversationId: string,
+        state: ConversationFlowStateRecord['state'],
+      ) => {
+        stored = { state, updatedAt: now };
+      },
+    };
+    const apmLeadsPort = {
+      createOrFind: jest.fn().mockResolvedValue({
+        profilingLink: 'https://crm.example/perfilacion/encrypted-lead-id',
+      }),
+    };
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+      undefined,
+      apmLeadsPort,
+    );
+
+    let finalResult: Awaited<
+      ReturnType<ConversationFlowStateService['advance']>
+    > | null = null;
+    for (const answer of [
+      '4',
+      'Ana López',
+      '29',
+      'ana@example.com',
+      'Guadalajara',
+      'Intermedio',
+    ])
+      finalResult = await service.advance(
+        'conversation-1',
+        { text: answer, messageType: 'TEXT' },
+        '5215550000001',
+      );
+
+    expect(apmLeadsPort.createOrFind).toHaveBeenCalledWith({
+      name: 'Ana López',
+      age: 29,
+      phone: '5215550000001',
+      email: 'ana@example.com',
+      city: 'Guadalajara',
+      englishLevel: 'Intermedio',
+    });
+    if (!finalResult) throw new Error('Expected a flow result');
+    expect(finalResult.state.nodeId).toBe('profiling-link');
+    expect(finalResult.state.variables.profilingLink).toBe(
+      'https://crm.example/perfilacion/encrypted-lead-id',
+    );
+  });
 });

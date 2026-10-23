@@ -27,10 +27,11 @@ MENÚ PRINCIPAL
 
 ## Perfilación y transferencia
 
-Configura `AUPAIR_PROFILING_LINK` con el enlace público real de perfilación.
-Es obligatorio en producción.
-ALICE lo muestra en el paso **Contactar a mi asesor**, pero no crea el handoff
-hasta que la candidata confirma con la opción `1` que ya llenó su perfil.
+En **Contactar a mi asesor**, ALICE solicita nombre, edad (18 a 29 años),
+correo, ciudad y nivel de inglés. Con el teléfono de WhatsApp, llama a APM para
+crear o reutilizar el lead y recibe su enlace de perfilación único. ALICE no
+crea el handoff hasta que la candidata confirma con la opción `1` que ya llenó
+su perfil.
 
 Al ocurrir el handoff, ALICE guarda la solicitud y llama a
 `CRM_ALICE_HANDOFFS_URL` cuando está configurado. APM/CRM es responsable de

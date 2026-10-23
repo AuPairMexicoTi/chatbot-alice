@@ -3,7 +3,6 @@ import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.ser
 import {
   CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS,
   CONVERSATION_FLOW_NOW,
-  CONVERSATION_FLOW_PROFILING_LINK,
   ConversationFlowStateService,
 } from './application/conversation-flow-state.service';
 import { CONVERSATION_FLOW_STATE_REPOSITORY } from './application/ports/conversation-flow-state.repository';
@@ -37,12 +36,6 @@ import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.
     {
       provide: CONVERSATION_FLOW_NOW,
       useValue: () => new Date(),
-    },
-    {
-      provide: CONVERSATION_FLOW_PROFILING_LINK,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) =>
-        config.get<string>('conversationFlow.profilingLink') ?? '',
     },
     {
       provide: CONVERSATION_FLOW_STATE_REPOSITORY,

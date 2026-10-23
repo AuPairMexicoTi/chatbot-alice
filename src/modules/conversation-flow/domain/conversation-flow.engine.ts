@@ -23,6 +23,10 @@ export class ConversationFlowEngine {
     });
   }
 
+  present(definition: FlowDefinition, state: FlowState): FlowResult {
+    return this.enter(definition, state);
+  }
+
   advance(
     definition: FlowDefinition,
     state: FlowState,
@@ -100,7 +104,7 @@ export class ConversationFlowEngine {
     const age = this.extractAge(normalized);
     const valid =
       capture === 'age'
-        ? age !== null && age >= 18 && age <= 28
+        ? age !== null && age >= 18 && age <= 29
         : capture === 'email'
           ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
           : normalized.length > 1;
@@ -162,8 +166,8 @@ export class ConversationFlowEngine {
   }
 
   private invalidReply(nodeId: string): string {
-    if (nodeId === 'menu') {
-      return 'No entendí tu respuesta. Responde con:\n\n1️⃣ Países disponibles\n2️⃣ ¿Qué hace una Au Pair?\n3️⃣ Proceso de aplicación\n4️⃣ Ya quiero aplicar\n\nTambién puedes escribir “asesor”.';
+    if (nodeId === 'main-menu') {
+      return 'No entendí tu respuesta. Responde con:\n\n1️⃣ ¿Qué hace una Au Pair?\n2️⃣ Requisitos para ser Au Pair\n3️⃣ Proceso general de aplicación\n4️⃣ Contactar a mi asesor\n\nTambién puedes escribir “asesor”.';
     }
 
     return 'No entendí tu respuesta. Elige una de las opciones indicadas o escribe “menú” para volver al inicio.';

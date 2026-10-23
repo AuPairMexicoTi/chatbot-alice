@@ -46,7 +46,33 @@ export const aupairFlowDefinition: FlowDefinition = {
     'contact-advisor': {
       id: 'contact-advisor',
       content:
-        '💌 ¡Contactar a mi asesor! 👩‍💻💖\n\n¡Tu aventura Au Pair está cada vez más cerca! ✈️🌎💕\nPara poder orientarte mejor, necesitamos conocer un poquito más sobre ti. 🌟\n\n📝 Completa tu perfil en el siguiente enlace:\n👉 {{profilingLink}} 🔗💻\n\n🧳💖 ¡Es el primer paso para conocer tus intereses y ayudarte a encontrar el programa ideal para ti!\n\nCuando termines, selecciona una opción 👇\n\n1️⃣ ✅ Ya llené mi perfil / Quiero hablar con un asesor 💬\n2️⃣ 🏠 Regresar al menú principal',
+        '💌 ¡Contactar a mi asesor! 👩‍💻💖\n\n¡Tu aventura Au Pair está cada vez más cerca! ✈️🌎💕\nPara poder orientarte mejor, necesitamos conocer un poquito más sobre ti. 🌟\n\n¿Cuál es tu nombre completo? ✍️',
+      capture: 'name',
+    },
+    'capture-age': {
+      id: 'capture-age',
+      content: '¡Mucho gusto, {{name}}! 💖 ¿Cuántos años tienes? 🎂',
+      capture: 'age',
+    },
+    'capture-email': {
+      id: 'capture-email',
+      content: '¡Perfecto! ¿Cuál es tu correo electrónico? 📧',
+      capture: 'email',
+    },
+    'capture-city': {
+      id: 'capture-city',
+      content: '¿En qué ciudad vives? 📍',
+      capture: 'city',
+    },
+    'capture-english': {
+      id: 'capture-english',
+      content: 'Por último, ¿cuál es tu nivel de inglés? 🗣️',
+      capture: 'englishLevel',
+    },
+    'profiling-link': {
+      id: 'profiling-link',
+      content:
+        '📝 Completa tu perfil en el siguiente enlace:\n👉 {{profilingLink}} 🔗💻\n\n🧳💖 ¡Es el primer paso para conocer tus intereses y ayudarte a encontrar el programa ideal para ti!\n\nCuando termines, selecciona una opción 👇\n\n1️⃣ ✅ Ya llené mi perfil / Quiero hablar con un asesor 💬\n2️⃣ 🏠 Regresar al menú principal',
       options: {
         '1|1️⃣|ya llené mi perfil|ya llene mi perfil|quiero hablar con un asesor|hablar con asesor':
           'advisor-confirmation',

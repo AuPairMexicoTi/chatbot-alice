@@ -9,7 +9,6 @@ export const conversationFlowConfig = registerAs('conversationFlow', () => ({
     /\/$/u,
     '',
   ),
-  profilingLink: process.env.AUPAIR_PROFILING_LINK ?? '',
 }));
 
 export type ConversationFlowConfig = ReturnType<typeof conversationFlowConfig>;
