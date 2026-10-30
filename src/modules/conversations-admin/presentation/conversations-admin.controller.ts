@@ -12,6 +12,7 @@ import { ConversationDetailDto } from './dto/conversation-detail.dto';
 import { MessageItemDto } from './dto/message-item.dto';
 import { FlowStateDto } from './dto/flow-state.dto';
 import { PaginatedResponseDto } from './dto/paginated-response.dto';
+import { MessagesPageResponseDto } from './dto/messages-page-response.dto';
 
 // Endpoints internos de solo lectura, consumidos unicamente por el backend
 // de APM (Checkout-Backend-APM) -- nunca por un frontend directamente. La
@@ -70,21 +71,18 @@ export class ConversationsAdminController {
   async messages(
     @Param('conversationId') conversationId: string,
     @Query() query: ListMessagesQueryDto,
-  ): Promise<PaginatedResponseDto<MessageItemDto>> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 50;
+  ): Promise<MessagesPageResponseDto<MessageItemDto>> {
+    const limit = query.limit ?? 30;
+    const before = query.before ? new Date(query.before) : undefined;
 
     const result = await this.listConversationMessagesUseCase.execute(
       conversationId,
-      page,
-      limit,
+      { before, limit },
     );
 
-    return PaginatedResponseDto.of(
+    return MessagesPageResponseDto.of(
       result.data.map((item) => MessageItemDto.fromReadModel(item)),
-      page,
-      limit,
-      result.total,
+      result.hasMore,
     );
   }
 

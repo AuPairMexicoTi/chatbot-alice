@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   ConversationQueryPort,
   ListConversationsFilters,
+  ListMessagesOptions,
+  MessagesPage,
   Paginated,
 } from '../../application/ports/conversation-query.port';
 import { ConversationListItem } from '../../application/read-models/conversation-list-item.read-model';
@@ -58,13 +60,19 @@ export class InMemoryConversationQueryRepository implements ConversationQueryPor
 
   async listMessages(
     conversationId: string,
-    page: number,
-    limit: number,
-  ): Promise<Paginated<MessageItem>> {
+    options: ListMessagesOptions,
+  ): Promise<MessagesPage<MessageItem>> {
+    const { before, limit } = options;
     const items = this.messagesByConversationId[conversationId] ?? [];
-    const start = (page - 1) * limit;
+    const filtered = before ? items.filter((m) => m.createdAt < before) : items;
+    const sorted = [...filtered].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
 
-    return { data: items.slice(start, start + limit), total: items.length };
+    return {
+      data: sorted.slice(0, limit).reverse(),
+      hasMore: sorted.length > limit,
+    };
   }
 
   async getFlowState(conversationId: string): Promise<FlowStateItem | null> {
