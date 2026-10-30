@@ -13,7 +13,6 @@
         "include": "../public/**/*",
         "outDir": "dist/public"
       }
-    ],
-    "watchAssets": true
+    ]
   }
 }

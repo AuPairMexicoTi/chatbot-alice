@@ -203,26 +203,18 @@ Suggested types: `INIT`, `ADD`, `UPDATE`, `FIX`, `REFACTOR`, `DOCS`, `TEST`, `CH
 
 ## Production deployment
 
-The GitHub Actions workflow `.github/workflows/deploy-vps.yml` validates each
-push to `main` with `pnpm check`. If validation passes, it connects to the VPS,
-fast-forwards the existing checkout from `origin/main`, and rebuilds/restarts
-the stack with `docker compose -f compose.production.yml up -d --build`.
-PostgreSQL and Redis use named volumes, and the deployment does not remove them
-or overwrite the VPS `.env` and `deploy/Caddyfile`.
+The GitHub Actions workflow `.github/workflows/deploy-vps.yml` runs `pnpm check`
+on pushes to `main`. On the VPS, a systemd timer runs
+`deploy/auto-deploy.sh` every minute. It fetches `origin/main` and rebuilds the
+production Compose stack only when a new commit is available and the
+`validate` GitHub Actions check has passed. This pull-based setup does not need
+GitHub SSH secrets or inbound SSH access from GitHub.
 
-Configure these repository or `production` environment secrets in GitHub before
-the first deployment:
-
-- `VPS_HOST`: VPS hostname or IP.
-- `VPS_USER`: SSH user with access to the application checkout and Docker.
-- `VPS_SSH_KEY`: private SSH key for that user.
-- `VPS_KNOWN_HOSTS`: verified SSH host key line(s) for the VPS.
-- `VPS_APP_PATH`: absolute path to the existing Git checkout on the VPS.
-
-The VPS checkout must already have `origin` configured and be able to fetch the
-GitHub repository. Keep `.env` and the server-specific `deploy/Caddyfile` on
-the VPS. After configuring the secrets, pushes to `main` deploy automatically;
-GitHub Actions also offers a manual `workflow_dispatch` run.
+Install `deploy/chatbot-alice-auto-deploy.service` and
+`deploy/chatbot-alice-auto-deploy.timer` into `/etc/systemd/system`, then run
+`systemctl daemon-reload && systemctl enable --now chatbot-alice-auto-deploy.timer`.
+The existing VPS `.env`, server-specific `deploy/Caddyfile`, and named database
+and Redis volumes must be kept in place.
 
 ## Additional documentation
 

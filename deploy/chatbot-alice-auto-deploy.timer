@@ -1,0 +1,11 @@
+[Unit]
+Description=Check GitHub for ALICE updates every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Persistent=true
+Unit=chatbot-alice-auto-deploy.service
+
+[Install]
+WantedBy=timers.target

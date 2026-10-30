@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for ALICE updates and deploy them
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/chatbot-alice
+ExecStart=/opt/chatbot-alice/deploy/auto-deploy.sh
+TimeoutStartSec=30min

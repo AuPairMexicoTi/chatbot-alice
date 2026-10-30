@@ -1,4 +1,4 @@
-name: Deploy ALICE to VPS
+name: Validate ALICE
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: alice-production-deploy
+  group: alice-validation
   cancel-in-progress: false
 
 jobs:
@@ -24,37 +24,3 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-
-  deploy:
-    needs: validate
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Configure SSH
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
-        run: |
-          test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-      - name: Update and restart production stack
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
-        run: |
-          test -n "$VPS_HOST" && test -n "$VPS_USER" && test -n "$VPS_APP_PATH"
-          remote_path=$(printf '%q' "$VPS_APP_PATH")
-          ssh -o BatchMode=yes "$VPS_USER@$VPS_HOST" "APP_PATH=$remote_path bash -s" <<'REMOTE'
-          set -euo pipefail
-          cd "$APP_PATH"
-          git switch main
-          git fetch origin main
-          git merge --ff-only origin/main
-          docker compose -f compose.production.yml up -d --build
-          docker compose -f compose.production.yml ps
-          REMOTE
