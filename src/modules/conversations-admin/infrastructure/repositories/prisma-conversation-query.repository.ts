@@ -4,6 +4,8 @@ import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.ser
 import {
   ConversationQueryPort,
   ListConversationsFilters,
+  ListMessagesOptions,
+  MessagesPage,
   Paginated,
 } from '../../application/ports/conversation-query.port';
 import { ConversationListItem } from '../../application/read-models/conversation-list-item.read-model';
@@ -167,24 +169,30 @@ export class PrismaConversationQueryRepository implements ConversationQueryPort 
 
   async listMessages(
     conversationId: string,
-    page: number,
-    limit: number,
-  ): Promise<Paginated<MessageItem>> {
-    const where: Prisma.MessageWhereInput = { conversationId };
-    const skip = (page - 1) * limit;
+    options: ListMessagesOptions,
+  ): Promise<MessagesPage<MessageItem>> {
+    const { before, limit } = options;
+    const where: Prisma.MessageWhereInput = {
+      conversationId,
+      ...(before ? { createdAt: { lt: before } } : {}),
+    };
 
-    const [records, total] = await Promise.all([
-      this.prismaService.message.findMany({
-        where,
-        orderBy: { createdAt: 'asc' },
-        skip,
-        take: limit,
-      }),
-      this.prismaService.message.count({ where }),
-    ]);
+    // Se pide un registro de mas (limit + 1) para saber si quedan mensajes
+    // mas viejos sin una segunda consulta de COUNT(*) -- esa cuenta ademas
+    // quedaria desactualizada si llega un mensaje nuevo mientras el admin
+    // sigue viendo el hilo. Se trae desc (lo mas reciente primero) y se
+    // revierte para devolver el bloque en orden cronologico ascendente.
+    const records = await this.prismaService.message.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+
+    const hasMore = records.length > limit;
+    const page = records.slice(0, limit).reverse();
 
     return {
-      data: records.map((record) => ({
+      data: page.map((record) => ({
         id: record.id,
         direction: record.direction,
         type: record.type,
@@ -193,7 +201,7 @@ export class PrismaConversationQueryRepository implements ConversationQueryPort 
         metadata: toMetadataRecord(record.metadata),
         createdAt: record.createdAt,
       })),
-      total,
+      hasMore,
     };
   }
 

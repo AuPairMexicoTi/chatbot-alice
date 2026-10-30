@@ -3,7 +3,8 @@ import { ApplicationError } from '@shared/domain/errors/application.error';
 import {
   CONVERSATION_QUERY_PORT,
   ConversationQueryPort,
-  Paginated,
+  ListMessagesOptions,
+  MessagesPage,
 } from '../ports/conversation-query.port';
 import { MessageItem } from '../read-models/message-item.read-model';
 
@@ -16,9 +17,8 @@ export class ListConversationMessagesUseCase {
 
   async execute(
     conversationId: string,
-    page: number,
-    limit: number,
-  ): Promise<Paginated<MessageItem>> {
+    options: ListMessagesOptions,
+  ): Promise<MessagesPage<MessageItem>> {
     const conversation =
       await this.conversationQueryPort.findById(conversationId);
 
@@ -30,6 +30,6 @@ export class ListConversationMessagesUseCase {
       );
     }
 
-    return this.conversationQueryPort.listMessages(conversationId, page, limit);
+    return this.conversationQueryPort.listMessages(conversationId, options);
   }
 }

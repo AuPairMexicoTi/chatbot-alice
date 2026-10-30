@@ -1,17 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsISO8601, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class ListMessagesQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  // Cursor de paginacion: sin `before` trae el bloque mas reciente, con
+  // `before` trae el bloque inmediatamente anterior a esa fecha -- ver
+  // ConversationQueryPort.listMessages.
+  @ApiPropertyOptional({ description: 'ISO 8601. Trae mensajes antes de esta fecha.' })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
+  @IsISO8601()
+  before?: string;
 
-  @ApiPropertyOptional({ default: 50, minimum: 1, maximum: 200 })
+  @ApiPropertyOptional({ default: 30, minimum: 1, maximum: 100 })
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(200)
-  limit?: number = 50;
+  @Max(100)
+  limit?: number = 30;
 }

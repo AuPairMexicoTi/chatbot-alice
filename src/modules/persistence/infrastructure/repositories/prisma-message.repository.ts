@@ -15,7 +15,18 @@ export class PrismaMessageRepository implements MessageRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateMessageInput): Promise<Message> {
-    const record = await this.prisma.message.create({ data: input });
+    // La bandeja de conversaciones admin ordena por Conversation.updatedAt
+    // (ver prisma-conversation-query.repository.ts) esperando que refleje
+    // la actividad real -- sin este touch, updatedAt solo cambia por
+    // updateStatus() y la lista termina ordenada por creacion/cambio de
+    // estado en vez de por el ultimo mensaje.
+    const [, record] = await this.prisma.$transaction([
+      this.prisma.conversation.update({
+        where: { id: input.conversationId },
+        data: { updatedAt: new Date() },
+      }),
+      this.prisma.message.create({ data: input }),
+    ]);
     return PrismaMessageMapper.toDomain(record);
   }
 
