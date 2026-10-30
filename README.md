@@ -201,6 +201,29 @@ Suggested types: `INIT`, `ADD`, `UPDATE`, `FIX`, `REFACTOR`, `DOCS`, `TEST`, `CH
 - If Docker is not available, run at least `pnpm prisma:generate`.
 - If Postgres or Redis are missing, `health/ready` will return an error.
 
+## Production deployment
+
+The GitHub Actions workflow `.github/workflows/deploy-vps.yml` validates each
+push to `main` with `pnpm check`. If validation passes, it connects to the VPS,
+fast-forwards the existing checkout from `origin/main`, and rebuilds/restarts
+the stack with `docker compose -f compose.production.yml up -d --build`.
+PostgreSQL and Redis use named volumes, and the deployment does not remove them
+or overwrite the VPS `.env` and `deploy/Caddyfile`.
+
+Configure these repository or `production` environment secrets in GitHub before
+the first deployment:
+
+- `VPS_HOST`: VPS hostname or IP.
+- `VPS_USER`: SSH user with access to the application checkout and Docker.
+- `VPS_SSH_KEY`: private SSH key for that user.
+- `VPS_KNOWN_HOSTS`: verified SSH host key line(s) for the VPS.
+- `VPS_APP_PATH`: absolute path to the existing Git checkout on the VPS.
+
+The VPS checkout must already have `origin` configured and be able to fetch the
+GitHub repository. Keep `.env` and the server-specific `deploy/Caddyfile` on
+the VPS. After configuring the secrets, pushes to `main` deploy automatically;
+GitHub Actions also offers a manual `workflow_dispatch` run.
+
 ## Additional documentation
 
 - `docs/architecture.md`
