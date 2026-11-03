@@ -49,11 +49,12 @@ export class WhatsAppInboundProcessor extends WorkerHost {
       this.logger.log(`Evento inbound procesado ${job.data.externalId}`);
     } catch (error) {
       await this.webhookEventRepository.updateStatus(webhookEvent.id, 'FAILED');
-      this.logger.error(
-        `Falló el evento inbound ${job.data.externalId}: ${
-          error instanceof Error ? error.message : 'Error desconocido'
-        }`,
-      );
+      this.logger.error({
+        err: error,
+        externalId: job.data.externalId,
+        webhookEventId: webhookEvent.id,
+        msg: 'Falló el evento inbound',
+      });
       throw error;
     }
   }

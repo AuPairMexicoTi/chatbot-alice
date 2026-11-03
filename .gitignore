@@ -8,8 +8,8 @@
 /node_modules
 /.pnpm-store
 
-# logs
-logs
+# logs (runtime output written by the Pino file transport, not src/modules/logs)
+/logs
 *.log
 npm-debug.log*
 pnpm-debug.log*

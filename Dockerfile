@@ -27,6 +27,7 @@ COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/public ./public
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
+RUN mkdir -p /app/logs && chown nestjs:nodejs /app/logs
 USER nestjs
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]

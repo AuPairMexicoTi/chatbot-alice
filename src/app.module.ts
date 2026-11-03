@@ -17,6 +17,7 @@ import { AutoRepliesModule } from '@modules/auto-replies/auto-replies.module';
 import { WebhooksModule } from '@modules/webhooks/webhooks.module';
 import { ConversationFlowModule } from '@modules/conversation-flow/conversation-flow.module';
 import { ConversationsAdminModule } from '@modules/conversations-admin/conversations-admin.module';
+import { LogsModule } from '@modules/logs/logs.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ConversationsAdminModule } from '@modules/conversations-admin/conversat
     WebhooksModule,
     ConversationFlowModule,
     ConversationsAdminModule,
+    LogsModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

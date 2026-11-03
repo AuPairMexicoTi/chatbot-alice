@@ -106,11 +106,15 @@ export class ProcessInboundWhatsAppMessageUseCase {
           // seguridad, la candidata se queda sin ninguna respuesta. Se
           // reinicia el flujo en vez de marcar la conversacion como
           // "esperando asesor": ningun humano fue notificado en realidad.
-          this.logger.error(
-            `Fallo el handoff a APM para la conversación ${conversation.id}: ${
-              error instanceof Error ? error.message : 'Error desconocido'
-            }`,
-          );
+          // nestjs-pino espera el mensaje DENTRO del objeto (msg) cuando el
+          // primer argumento ya es un objeto -- si se manda como segundo
+          // argumento, Logger.call() lo interpreta como "context", no como
+          // mensaje (ver nestjs-pino/Logger.js).
+          this.logger.error({
+            err: error,
+            conversationId: conversation.id,
+            msg: 'Fallo el handoff a APM',
+          });
           flowResult = await this.conversationFlowStateService.restart(
             conversation.id,
           );

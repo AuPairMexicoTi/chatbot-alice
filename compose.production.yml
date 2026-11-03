@@ -56,6 +56,8 @@ services:
       - ./node_modules/.bin/prisma migrate deploy --config ./prisma.config.ts && node dist/src/main.js
     ports:
       - "127.0.0.1:3000:3000"
+    volumes:
+      - alice_logs:/app/logs
     networks:
       - internal
     healthcheck:
@@ -97,3 +99,4 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+  alice_logs:

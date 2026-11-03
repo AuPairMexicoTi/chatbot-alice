@@ -30,10 +30,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const internalServerErrorStatus = 500;
     if (Number(statusCode) >= internalServerErrorStatus) {
-      this.logger.error(
-        exception instanceof Error ? exception.message : String(exception),
-        exception instanceof Error ? exception.stack : undefined,
-      );
+      this.logger.error({
+        err: exception instanceof Error ? exception : new Error(String(exception)),
+        requestId: request.id,
+        path: request.originalUrl,
+        msg: 'Excepción no controlada',
+      });
     }
 
     const payload = {
