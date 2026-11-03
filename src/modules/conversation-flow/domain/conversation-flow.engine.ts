@@ -54,13 +54,21 @@ export class ConversationFlowEngine {
       isValid: (value: string) => boolean;
       normalize: (value: string) => string;
     }> = [
-      { field: 'name', isValid: (v) => this.isValidFullName(v), normalize: (v) => v },
+      {
+        field: 'name',
+        isValid: (v) => this.isValidFullName(v),
+        normalize: (v) => v,
+      },
       {
         field: 'age',
         isValid: (v) => this.isValidAge(v),
         normalize: (v) => String(this.extractAge(v)),
       },
-      { field: 'email', isValid: (v) => this.isValidEmail(v), normalize: (v) => v },
+      {
+        field: 'email',
+        isValid: (v) => this.isValidEmail(v),
+        normalize: (v) => v,
+      },
     ];
 
     const variables: Record<string, string> = {};

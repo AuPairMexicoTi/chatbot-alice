@@ -17,7 +17,9 @@ const toBoolean = (value: unknown): boolean | undefined =>
   value === undefined ? undefined : value === true || value === 'true';
 
 export class ListLogsQueryDto {
-  @ApiPropertyOptional({ description: 'Busca en todo el contenido de la entrada' })
+  @ApiPropertyOptional({
+    description: 'Busca en todo el contenido de la entrada',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -28,25 +30,34 @@ export class ListLogsQueryDto {
   @IsIn(LOG_LEVELS)
   level?: LogLevelValue;
 
-  @ApiPropertyOptional({ description: 'IP del request (Alice no tiene usuarios autenticados)' })
+  @ApiPropertyOptional({
+    description: 'IP del request (Alice no tiene usuarios autenticados)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(120)
   user?: string;
 
-  @ApiPropertyOptional({ description: 'conversationId/contactId -- equivalente de "lead" en APM' })
+  @ApiPropertyOptional({
+    description: 'conversationId/contactId -- equivalente de "lead" en APM',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(120)
   lead?: string;
 
-  @ApiPropertyOptional({ description: 'Metodo o ruta HTTP (solo aplica a logs de una peticion)' })
+  @ApiPropertyOptional({
+    description: 'Metodo o ruta HTTP (solo aplica a logs de una peticion)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   route?: string;
 
-  @ApiPropertyOptional({ description: 'req.id de pino-http, para ver otras lineas de la misma peticion' })
+  @ApiPropertyOptional({
+    description:
+      'req.id de pino-http, para ver otras lineas de la misma peticion',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(120)
@@ -68,7 +79,10 @@ export class ListLogsQueryDto {
   @IsBoolean()
   only_errors?: boolean;
 
-  @ApiPropertyOptional({ default: true, description: 'Agrupa warn/error/fatal repetidos (mismo origen+firma)' })
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Agrupa warn/error/fatal repetidos (mismo origen+firma)',
+  })
   @IsOptional()
   @Transform(({ value }) => toBoolean(value))
   @IsBoolean()
