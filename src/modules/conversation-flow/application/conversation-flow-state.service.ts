@@ -10,6 +10,7 @@ import {
 import { ConversationFlowEngine } from '../domain/conversation-flow.engine';
 import { aupairFlowDefinition } from '../domain/aupair-flow.definition';
 import { FlowInput, FlowResult } from '../domain/conversation-flow.types';
+import { parseMetaAdLeadFormCandidates } from '../domain/meta-ad-lead-form.parser';
 import { InMemoryConversationFlowStateRepository } from '../infrastructure/repositories/in-memory-conversation-flow-state.repository';
 import { APM_LEADS_PORT, ApmLeadsPort } from './ports/apm-leads.port';
 
@@ -71,7 +72,23 @@ export class ConversationFlowStateService {
           ...record.state,
           variables: record.state.variables,
         };
-    let result = this.engine.advance(definition, currentState, input);
+
+    // Los anuncios "Click to WhatsApp" de Meta precargan el primer mensaje
+    // con un formulario (nombre/telefono/email/...) que el lead manda tal
+    // cual sin haber leido el menu de bienvenida -- si es su primer turno,
+    // se intenta reconocer ese formato y precargar lo que traiga antes de
+    // evaluarlo (sin exito) como respuesta al menu. Ver
+    // ConversationFlowEngine.enterFromAdLeadPrefill.
+    const adLeadCandidates =
+      shouldRestart && input.text
+        ? parseMetaAdLeadFormCandidates(input.text)
+        : null;
+    const adLeadResult = adLeadCandidates
+      ? this.engine.enterFromAdLeadPrefill(definition, adLeadCandidates)
+      : null;
+
+    let result =
+      adLeadResult ?? this.engine.advance(definition, currentState, input);
     if (result.state.nodeId === 'profiling-link') {
       if (!phoneNumber)
         throw new Error('Phone number is required to create an APM lead');

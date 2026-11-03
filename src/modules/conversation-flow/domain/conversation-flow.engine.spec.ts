@@ -215,4 +215,42 @@ describe('ConversationFlowEngine', () => {
     expect(result.state.status).toBe('AWAITING_HUMAN');
     expect(result.requestHandoff).toBe(true);
   });
+
+  describe('enterFromAdLeadPrefill', () => {
+    it('skips straight to the city question when name, age and email are all valid', () => {
+      const result = engine.enterFromAdLeadPrefill(aupairFlowDefinition, {
+        name: 'maricruz mendragen',
+        age: '21',
+        email: 'maricruz@example.com',
+      });
+
+      expect(result?.state.nodeId).toBe('capture-city');
+      expect(result?.state.variables).toEqual({
+        name: 'maricruz mendragen',
+        age: '21',
+        email: 'maricruz@example.com',
+      });
+      expect(result?.messages[0]).toContain('ciudad');
+    });
+
+    it('stops at the first missing or invalid field instead of skipping it', () => {
+      const result = engine.enterFromAdLeadPrefill(aupairFlowDefinition, {
+        name: 'maricruz mendragen',
+        age: 'De 21 a 23 años',
+        email: 'maricruz@example.com',
+      });
+
+      expect(result?.state.nodeId).toBe('capture-age');
+      expect(result?.state.variables).toEqual({ name: 'maricruz mendragen' });
+    });
+
+    it('returns null when not even the name is rescuable', () => {
+      const result = engine.enterFromAdLeadPrefill(aupairFlowDefinition, {
+        age: '21',
+        email: 'maricruz@example.com',
+      });
+
+      expect(result).toBeNull();
+    });
+  });
 });

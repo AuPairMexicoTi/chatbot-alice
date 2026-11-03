@@ -100,6 +100,40 @@ describe('ConversationFlowStateService', () => {
     expect(result.messages[0]).toContain('bienvenida');
   });
 
+  it('precarga datos del formulario de un anuncio de Meta en vez de responder "No entendí"', async () => {
+    const repository = repositoryWith(null);
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+    );
+
+    const adFormText = [
+      '¡Hola! Completé el formulario y me gustaría obtener más información sobre el negocio.',
+      '',
+      'Full name: @maricruz mendragen ^',
+      'WhatsApp number: +527121476178',
+      'Email: maricruzmondragon333@gmail.com',
+      '¿A qué país te gustaría ir?: Estados Unidos',
+      '¿Qué edad tienes actualmente?: De 21 a 23 años',
+      '¿Cuál es tu status actual?: Soltera y sin hijos',
+    ].join('\n');
+
+    const result = await service.advance('conversation-1', {
+      text: adFormText,
+      messageType: 'TEXT',
+    });
+
+    expect(result.messages[0]).not.toContain('No entendí');
+    expect(result.state.nodeId).toBe('capture-city');
+    expect(result.messages[0]).toContain('ciudad');
+    expect(result.state.variables).toEqual({
+      name: 'maricruz mendragen',
+      age: '21',
+      email: 'maricruzmondragon333@gmail.com',
+    });
+  });
+
   it('creates or finds the lead and sends the unique profiling link', async () => {
     let stored: ConversationFlowStateRecord | null = null;
     const repository: ConversationFlowStateRepository = {

@@ -4,6 +4,7 @@ import {
   FlowResult,
   FlowState,
 } from './conversation-flow.types';
+import { MetaAdLeadFormCandidates } from './meta-ad-lead-form.parser';
 
 const normalize = (value: string): string =>
   value
@@ -25,6 +26,56 @@ export class ConversationFlowEngine {
 
   present(definition: FlowDefinition, state: FlowState): FlowResult {
     return this.enter(definition, state);
+  }
+
+  // Precarga name/age/email a partir del formulario precargado de un
+  // anuncio "Click to WhatsApp" de Meta (ver meta-ad-lead-form.parser.ts) y
+  // arranca el flujo justo despues del ultimo campo valido, en vez de
+  // evaluar ese texto como respuesta al menu principal. Se detiene en el
+  // primer campo ausente o invalido -- nunca salta un paso sin dato
+  // confirmado -- y devuelve null si ni siquiera el nombre es rescatable,
+  // para que el llamador caiga de vuelta al flujo normal.
+  enterFromAdLeadPrefill(
+    definition: FlowDefinition,
+    candidates: MetaAdLeadFormCandidates,
+  ): FlowResult | null {
+    const nextNodeAfter: Record<'name' | 'age' | 'email', string> = {
+      name: 'capture-age',
+      age: 'capture-email',
+      email: 'capture-city',
+    };
+    const steps: Array<{
+      field: 'name' | 'age' | 'email';
+      isValid: (value: string) => boolean;
+      normalize: (value: string) => string;
+    }> = [
+      { field: 'name', isValid: (v) => this.isValidFullName(v), normalize: (v) => v },
+      {
+        field: 'age',
+        isValid: (v) => this.isValidAge(v),
+        normalize: (v) => String(this.extractAge(v)),
+      },
+      { field: 'email', isValid: (v) => this.isValidEmail(v), normalize: (v) => v },
+    ];
+
+    const variables: Record<string, string> = {};
+    let lastCaptured: 'name' | 'age' | 'email' | null = null;
+
+    for (const step of steps) {
+      const raw = candidates[step.field];
+      if (raw === undefined || !step.isValid(raw)) break;
+      variables[step.field] = step.normalize(raw);
+      lastCaptured = step.field;
+    }
+
+    if (!lastCaptured) return null;
+
+    return this.enter(definition, {
+      nodeId: nextNodeAfter[lastCaptured],
+      status: 'ACTIVE',
+      attempts: 0,
+      variables,
+    });
   }
 
   advance(
