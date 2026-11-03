@@ -112,6 +112,17 @@ export class ConversationFlowStateService {
     return result;
   }
 
+  // Red de seguridad para cuando el handoff a APM falla (ver
+  // ProcessInboundWhatsAppMessageUseCase): reinicia el flujo al menu
+  // principal y lo persiste, para que el lead siempre reciba una respuesta
+  // en vez de quedarse sin contestacion.
+  async restart(conversationId: string): Promise<FlowResult> {
+    const definition = await this.flowDefinitionRepository.getDefinition();
+    const result = this.engine.start(definition);
+    await this.repository.save(conversationId, result.state);
+    return result;
+  }
+
   async closeForInactivity(conversationId: string): Promise<boolean> {
     const record = await this.repository.findByConversationId(conversationId);
     if (!record || record.state.status !== 'ACTIVE') return false;

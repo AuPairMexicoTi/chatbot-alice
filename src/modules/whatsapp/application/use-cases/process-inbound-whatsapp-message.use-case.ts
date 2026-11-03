@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   CONTACT_REPOSITORY,
   ContactRepository,
@@ -26,6 +26,8 @@ import { ConversationInactivityService } from '../services/conversation-inactivi
 
 @Injectable()
 export class ProcessInboundWhatsAppMessageUseCase {
+  private readonly logger = new Logger(ProcessInboundWhatsAppMessageUseCase.name);
+
   constructor(
     @Inject(CONTACT_REPOSITORY)
     private readonly contactRepository: ContactRepository,
@@ -71,7 +73,7 @@ export class ProcessInboundWhatsAppMessageUseCase {
       metadata: { whatsAppMessageType: payload.messageType },
     });
 
-    const flowResult = await this.conversationFlowStateService.advance(
+    let flowResult = await this.conversationFlowStateService.advance(
       conversation.id,
       {
         text: payload.text,
@@ -82,18 +84,39 @@ export class ProcessInboundWhatsAppMessageUseCase {
     let handoffResult: ApmHandoffResult | undefined;
     if (flowResult.requestHandoff) {
       const values = flowResult.state.variables;
+      let handoffSucceeded = !this.apmHandoffPort;
       if (this.apmHandoffPort) {
-        handoffResult = await this.apmHandoffPort.request({
-          phone: contact.phoneNumber,
-          email: values.email,
-          reason: 'La candidata solicitó hablar con un asesor desde WhatsApp.',
-        });
-        flowResult.messages = [this.advisorMessage(handoffResult)];
+        try {
+          handoffResult = await this.apmHandoffPort.request({
+            phone: contact.phoneNumber,
+            email: values.email,
+            reason: 'La candidata solicitó hablar con un asesor desde WhatsApp.',
+          });
+          flowResult.messages = [this.advisorMessage(handoffResult)];
+          handoffSucceeded = true;
+        } catch (error) {
+          // El handoff a APM falla, por ejemplo, cuando el lead escribe
+          // "asesor" antes de que exista su registro en APM (eso recien se
+          // crea al llegar al link de perfilacion) -- sin esta red de
+          // seguridad, la candidata se queda sin ninguna respuesta. Se
+          // reinicia el flujo en vez de marcar la conversacion como
+          // "esperando asesor": ningun humano fue notificado en realidad.
+          this.logger.error(
+            `Fallo el handoff a APM para la conversación ${conversation.id}: ${
+              error instanceof Error ? error.message : 'Error desconocido'
+            }`,
+          );
+          flowResult = await this.conversationFlowStateService.restart(
+            conversation.id,
+          );
+        }
       }
-      await this.requestHumanHandoffUseCase?.execute(
-        conversation.id,
-        'La candidata solicitó hablar con un asesor desde WhatsApp.',
-      );
+      if (handoffSucceeded) {
+        await this.requestHumanHandoffUseCase?.execute(
+          conversation.id,
+          'La candidata solicitó hablar con un asesor desde WhatsApp.',
+        );
+      }
     }
     if (flowResult.state.status === 'ACTIVE')
       await this.conversationInactivityService?.schedule(conversation.id);

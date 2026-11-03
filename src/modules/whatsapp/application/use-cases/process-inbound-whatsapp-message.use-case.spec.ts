@@ -343,4 +343,60 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     expect(handoffMessage?.type).toBe('TEXT');
     expect(apmHandoffPort.request).toHaveBeenCalledTimes(1);
   });
+
+  it('responde con el menú (en vez de quedarse sin contestar) cuando el handoff a APM falla', async () => {
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
+    );
+    const apmHandoffPort = {
+      // Asi falla hoy en producción: el lead escribe "asesor" antes de que
+      // exista su registro en APM (recién se crea al llegar al link de
+      // perfilación), y APM responde 422 "No se encontró el lead".
+      request: jest
+        .fn()
+        .mockRejectedValue(
+          new Error('APM handoff request failed with 422: lead not found'),
+        ),
+    };
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      ),
+      new QueueOutboundMessageUseCase(queue),
+      new ConversationFlowStateService(),
+      handoffUseCase,
+      apmHandoffPort,
+    );
+
+    await useCase.execute(incomingMessage('wamid.handoff-fail.1', 'asesor'));
+
+    const outboundMessages = [...store.messages.values()].filter(
+      (message) => message.direction === 'OUTBOUND',
+    );
+    expect(outboundMessages).toHaveLength(1);
+    expect(outboundMessages[0].text).toContain('bienvenida');
+    expect(outboundMessages[0].text).not.toContain('Tu asesor asignado');
+
+    const [conversation] = [...store.conversations.values()];
+    expect(conversation.status).toBe('OPEN');
+    const openHandoff = await handoffRepository.findOpenByConversationId(
+      conversation.id,
+    );
+    expect(openHandoff).toBeNull();
+  });
 });
