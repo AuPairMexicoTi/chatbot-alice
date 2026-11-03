@@ -57,8 +57,8 @@ jobs:
           ALICE_VPS_KNOWN_HOSTS: ${{ secrets.ALICE_VPS_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\\n' "$ALICE_VPS_SSH_KEY" > ~/.ssh/alice_deploy
-          printf '%s\\n' "$ALICE_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$ALICE_VPS_SSH_KEY" > ~/.ssh/alice_deploy
+          printf '%s\n' "$ALICE_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/alice_deploy ~/.ssh/known_hosts
 
       - name: Deploy and wait for healthy containers
@@ -67,5 +67,5 @@ jobs:
           ALICE_VPS_USER: ${{ secrets.ALICE_VPS_USER }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          ssh -i ~/.ssh/alice_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \\
+          ssh -i ~/.ssh/alice_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "$ALICE_VPS_USER@$ALICE_VPS_HOST" "deploy $GITHUB_SHA"
