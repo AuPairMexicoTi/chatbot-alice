@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MessagesPageMetaDto {
-  @ApiProperty({ description: 'true si hay mensajes mas viejos que los de este bloque.' })
+  @ApiProperty({
+    description: 'true si hay mensajes mas viejos que los de este bloque.',
+  })
   hasMore!: boolean;
 }
 
