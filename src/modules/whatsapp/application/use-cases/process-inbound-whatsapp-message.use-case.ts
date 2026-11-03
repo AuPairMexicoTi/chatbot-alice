@@ -27,7 +27,9 @@ import { normalizeWhatsAppContactId } from '../../domain/whatsapp-phone';
 
 @Injectable()
 export class ProcessInboundWhatsAppMessageUseCase {
-  private readonly logger = new Logger(ProcessInboundWhatsAppMessageUseCase.name);
+  private readonly logger = new Logger(
+    ProcessInboundWhatsAppMessageUseCase.name,
+  );
 
   constructor(
     @Inject(CONTACT_REPOSITORY)
@@ -95,7 +97,8 @@ export class ProcessInboundWhatsAppMessageUseCase {
           handoffResult = await this.apmHandoffPort.request({
             phone: contact.phoneNumber,
             email: values.email,
-            reason: 'La candidata solicitó hablar con un asesor desde WhatsApp.',
+            reason:
+              'La candidata solicitó hablar con un asesor desde WhatsApp.',
           });
           flowResult.messages = [this.advisorMessage(handoffResult)];
           handoffSucceeded = true;
