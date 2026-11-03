@@ -17,12 +17,12 @@ secret**:
 | `ALICE_VPS_SSH_KEY` | Private key for that deploy user |
 | `ALICE_VPS_KNOWN_HOSTS` | Verified `known_hosts` entry for the VPS |
 
-The SSH key should be restricted to a forced command that accepts only
-`deploy <40-character-commit-sha>`. That command can run only the existing
-`chatbot-alice-auto-deploy.service` via `sudo`, then verify the deployed SHA and
-wait for the Compose health checks. Keep the existing systemd timer enabled
-until the workflow has completed a successful production deployment. Then
-disable the timer so GitHub Actions is the only deployment trigger.
+The SSH key is restricted to a forced command that accepts only
+`deploy <40-character-commit-sha>`. It can trigger only the existing
+`chatbot-alice-auto-deploy.service`, verify the deployed SHA, and wait for
+Compose health checks. The systemd timer stays enabled until the first
+successful Actions deployment; that successful run disables the timer
+automatically.
 
 The deploy service uses a `flock` lock, so a timer tick and an Actions-triggered
 run cannot deploy the same checkout concurrently. Deployment fails if the
