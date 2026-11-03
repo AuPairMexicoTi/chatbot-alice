@@ -24,6 +24,8 @@ describe('ConversationFlowEngine', () => {
     ['1', 'what-is-aupair-pdf', 'hermana mayor'],
     ['2', 'requirements', 'De 18 a 29 años'],
     ['3', 'application-process', 'Inscríbete al programa'],
+    ['Que hace una Au pair??', 'what-is-aupair-pdf', 'hermana mayor'],
+    ['¿Qué hace una Au Pair?', 'what-is-aupair-pdf', 'hermana mayor'],
   ])('routes menu option %s to %s', (option, nodeId, expectedContent) => {
     const result = engine.advance(
       aupairFlowDefinition,

@@ -6,11 +6,16 @@ import {
 } from './conversation-flow.types';
 import { MetaAdLeadFormCandidates } from './meta-ad-lead-form.parser';
 
+// Se usa para comparar contra las opciones del menu (y para validar
+// edad/respuestas genericas) -- sin quitar signos de puntuacion, "Que hace
+// una Au pair??" nunca calzaba con la opcion configurada "que hace una au
+// pair" (sin "¿" ni "?"), por mas que el acento/mayusculas ya se ignoraran.
 const normalize = (value: string): string =>
   value
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
+    .replace(/[¿?¡!.,;:]+/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
 
