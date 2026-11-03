@@ -1,5 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -48,6 +50,17 @@ export class ListConversationsQueryDto {
   @IsString()
   @MaxLength(120)
   assignedAdvisorId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'true: solo conversaciones cuyo ultimo mensaje es INBOUND (sin respuesta del bot ni de un humano despues)',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined ? undefined : value === true || value === 'true',
+  )
+  @IsBoolean()
+  noReply?: boolean;
 
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()

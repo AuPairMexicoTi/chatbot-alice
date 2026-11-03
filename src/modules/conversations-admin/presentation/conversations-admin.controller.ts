@@ -43,6 +43,7 @@ export class ConversationsAdminController {
       dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
       dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
       assignedAdvisorId: query.assignedAdvisorId,
+      noReply: query.noReply,
       page,
       limit,
     });

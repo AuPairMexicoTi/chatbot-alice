@@ -10,6 +10,11 @@ export interface ListConversationsFilters {
   dateFrom?: Date;
   dateTo?: Date;
   assignedAdvisorId?: string;
+  // true: solo conversaciones cuyo ultimo mensaje es INBOUND (el lead
+  // escribio y nadie -- ni bot ni humano -- le respondio despues). Detecta
+  // los casos de "se quedo sin contestar" sin depender de que alguien los
+  // encuentre scrolleando el inbox a mano.
+  noReply?: boolean;
   page: number;
   limit: number;
 }

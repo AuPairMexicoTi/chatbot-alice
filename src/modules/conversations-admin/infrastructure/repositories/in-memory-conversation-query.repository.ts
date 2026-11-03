@@ -30,8 +30,18 @@ export class InMemoryConversationQueryRepository implements ConversationQueryPor
   async list(
     filters: ListConversationsFilters,
   ): Promise<Paginated<ConversationListItem>> {
+    const hasNoReply = (conversationId: string): boolean => {
+      const messages = this.messagesByConversationId[conversationId] ?? [];
+      if (messages.length === 0) return false;
+      const latest = messages.reduce((a, b) =>
+        a.createdAt >= b.createdAt ? a : b,
+      );
+      return latest.direction === 'INBOUND';
+    };
+
     const items: ConversationListItem[] = this.conversations
       .filter((c) => !filters.status || c.status === filters.status)
+      .filter((c) => !filters.noReply || hasNoReply(c.id))
       .map((c) => ({
         id: c.id,
         contactId: c.contact.id,

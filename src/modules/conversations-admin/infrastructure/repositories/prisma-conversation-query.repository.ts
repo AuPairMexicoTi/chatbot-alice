@@ -77,8 +77,17 @@ export class PrismaConversationQueryRepository implements ConversationQueryPort 
   async list(
     filters: ListConversationsFilters,
   ): Promise<Paginated<ConversationListItem>> {
+    // Prisma no puede expresar "el mensaje mas reciente de esta conversacion
+    // es INBOUND" de forma declarativa en el where -- se resuelve aparte por
+    // SQL (una vez, no por pagina) y se agrega como filtro de id, igual que
+    // cualquier otro filtro de esta lista.
+    const noReplyIds = filters.noReply
+      ? await this.findConversationIdsWithoutReply()
+      : null;
+
     const where: Prisma.ConversationWhereInput = {
       AND: [
+        noReplyIds ? { id: { in: noReplyIds } } : {},
         filters.status ? { status: filters.status } : {},
         filters.dateFrom || filters.dateTo
           ? {
@@ -130,6 +139,27 @@ export class PrismaConversationQueryRepository implements ConversationQueryPort 
     ]);
 
     return { data: records.map(toListItem), total };
+  }
+
+  // Una conversacion "sin respuesta" es aquella cuyo mensaje mas reciente es
+  // INBOUND -- el lead escribio y nadie (bot, auto-reply ni humano) le
+  // contesto despues. Es la firma de los casos de "se quedo sin responder"
+  // encontrados en el inbox (ver ProcessInboundWhatsAppMessageUseCase).
+  private async findConversationIdsWithoutReply(): Promise<string[]> {
+    const rows = await this.prismaService.$queryRaw<Array<{ id: string }>>`
+      SELECT c.id
+      FROM alc_conversations c
+      WHERE EXISTS (
+        SELECT 1 FROM alc_messages m
+        WHERE m.conversation_id = c.id
+          AND m.direction = 'INBOUND'
+          AND m.created_at = (
+            SELECT MAX(m2.created_at) FROM alc_messages m2
+            WHERE m2.conversation_id = c.id
+          )
+      )
+    `;
+    return rows.map((row) => row.id);
   }
 
   async findById(conversationId: string): Promise<ConversationDetail | null> {
