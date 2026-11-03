@@ -1,17 +1,21 @@
-name: Validate ALICE
+name: ALICE CI/CD
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
   workflow_dispatch:
 
 concurrency:
-  group: alice-validation
+  group: alice-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   validate:
+    name: validate
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://build:build-only@127.0.0.1:5432/chatbot_alice
@@ -27,3 +31,41 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm prisma:generate
       - run: pnpm check
+
+  deploy:
+    name: deploy to VPS
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify deployment secrets
+        env:
+          ALICE_VPS_HOST: ${{ secrets.ALICE_VPS_HOST }}
+          ALICE_VPS_USER: ${{ secrets.ALICE_VPS_USER }}
+          ALICE_VPS_SSH_KEY: ${{ secrets.ALICE_VPS_SSH_KEY }}
+          ALICE_VPS_KNOWN_HOSTS: ${{ secrets.ALICE_VPS_KNOWN_HOSTS }}
+        run: |
+          test -n "$ALICE_VPS_HOST" || { echo "Missing Actions secret ALICE_VPS_HOST"; exit 1; }
+          test -n "$ALICE_VPS_USER" || { echo "Missing Actions secret ALICE_VPS_USER"; exit 1; }
+          test -n "$ALICE_VPS_SSH_KEY" || { echo "Missing Actions secret ALICE_VPS_SSH_KEY"; exit 1; }
+          test -n "$ALICE_VPS_KNOWN_HOSTS" || { echo "Missing Actions secret ALICE_VPS_KNOWN_HOSTS"; exit 1; }
+
+      - name: Configure SSH
+        env:
+          ALICE_VPS_SSH_KEY: ${{ secrets.ALICE_VPS_SSH_KEY }}
+          ALICE_VPS_KNOWN_HOSTS: ${{ secrets.ALICE_VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ALICE_VPS_SSH_KEY" > ~/.ssh/alice_deploy
+          printf '%s\n' "$ALICE_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/alice_deploy ~/.ssh/known_hosts
+
+      - name: Deploy and wait for healthy containers
+        env:
+          ALICE_VPS_HOST: ${{ secrets.ALICE_VPS_HOST }}
+          ALICE_VPS_USER: ${{ secrets.ALICE_VPS_USER }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/alice_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$ALICE_VPS_USER@$ALICE_VPS_HOST" "deploy $GITHUB_SHA"

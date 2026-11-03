@@ -5,7 +5,9 @@ export class ListMessagesQueryDto {
   // Cursor de paginacion: sin `before` trae el bloque mas reciente, con
   // `before` trae el bloque inmediatamente anterior a esa fecha -- ver
   // ConversationQueryPort.listMessages.
-  @ApiPropertyOptional({ description: 'ISO 8601. Trae mensajes antes de esta fecha.' })
+  @ApiPropertyOptional({
+    description: 'ISO 8601. Trae mensajes antes de esta fecha.',
+  })
   @IsOptional()
   @IsISO8601()
   before?: string;
