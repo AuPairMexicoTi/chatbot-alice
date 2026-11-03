@@ -23,6 +23,7 @@ import {
 } from '@modules/conversation-flow/application/ports/apm-handoff.port';
 import { RequestHumanHandoffUseCase } from './request-human-handoff.use-case';
 import { ConversationInactivityService } from '../services/conversation-inactivity.service';
+import { normalizeWhatsAppContactId } from '../../domain/whatsapp-phone';
 
 @Injectable()
 export class ProcessInboundWhatsAppMessageUseCase {
@@ -51,8 +52,12 @@ export class ProcessInboundWhatsAppMessageUseCase {
       return;
     }
 
+    // El wa_id que manda Meta ya suele venir en el formato canonico, pero se
+    // normaliza igual para que ambos caminos (este y SendWelcomeMessageUseCase)
+    // garanticen el mismo externalId sin depender de que Meta nunca cambie
+    // su formato -- ver whatsapp-phone.ts.
     const contact = await this.contactRepository.upsert({
-      externalId: payload.contactExternalId,
+      externalId: normalizeWhatsAppContactId(payload.contactExternalId),
       name: payload.contactName,
       phoneNumber: payload.from,
     });

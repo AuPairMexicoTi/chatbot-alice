@@ -18,6 +18,7 @@ import {
 } from '@modules/auto-replies/application/ports/auto-reply.repository';
 import { ApplicationError } from '@shared/domain/errors/application.error';
 import { QueueOutboundMessageUseCase } from './queue-outbound-message.use-case';
+import { normalizeWhatsAppContactId } from '../../domain/whatsapp-phone';
 
 export const WELCOME_AUTO_REPLY_KEY = 'welcome_zapier_lead';
 
@@ -60,8 +61,15 @@ export class SendWelcomeMessageUseCase {
       );
     }
 
+    // El CRM de APM manda el telefono sin un formato fijo (a veces los diez
+    // digitos nacionales, a veces ya con prefijo de pais) -- se normaliza al
+    // wa_id canonico antes de usarlo como externalId para que este contacto
+    // resuelva al mismo Contact que crea el flujo inbound cuando el lead
+    // responde de verdad por WhatsApp (ver whatsapp-phone.ts). Antes de este
+    // fix, un formato distinto creaba un segundo Contact huerfano y el
+    // mensaje de bienvenida quedaba en una conversacion que nadie mas veia.
     const contact = await this.contactRepository.upsert({
-      externalId: input.phoneNumber,
+      externalId: normalizeWhatsAppContactId(input.phoneNumber),
       name: input.name,
       phoneNumber: input.phoneNumber,
     });
