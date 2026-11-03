@@ -69,6 +69,7 @@ CRM profiling-link integration:
 Guided Au Pair flow:
 
 - When a candidate completes the WhatsApp intake, ALICE calls APM to create or reuse the lead and sends the unique profiling link returned by APM.
+- Handoff replies use the advisor assigned by the CRM, including existing assignments; they never substitute the mailbox contact. WhatsApp links are normalized for Mexico and known placeholder numbers are omitted.
 - The human handoff occurs only after the candidate selects **Ya llené mi perfil / Quiero hablar con un asesor**.
 
 WhatsApp images (optional legacy assets):
