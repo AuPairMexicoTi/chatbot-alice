@@ -46,6 +46,6 @@ then
 fi
 
 git merge --ff-only --quiet origin/main
-docker compose -f compose.production.yml up -d --build
+docker compose -f compose.production.yml up -d --build --wait --wait-timeout 300
 docker compose -f compose.production.yml ps
-printf 'ALICE deployed at %s\n' "$(git rev-parse --short HEAD)"
+printf 'ALICE deployed at %s\\n' "$(git rev-parse --short HEAD)"
