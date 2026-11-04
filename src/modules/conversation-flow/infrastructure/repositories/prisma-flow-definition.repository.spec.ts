@@ -19,6 +19,6 @@ describe('PrismaFlowDefinitionRepository', () => {
     expect(definition.nodes.requirements.content).toContain(
       'Requisitos para ser Au Pair',
     );
-    expect(definition.nodes['contact-advisor'].imageUrl).toBeUndefined();
+    expect(definition.nodes['main-menu'].imageUrl).toBeUndefined();
   });
 });

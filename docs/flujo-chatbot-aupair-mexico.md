@@ -9,9 +9,8 @@ MENÚ PRINCIPAL
   1. ¿Qué hace una Au Pair?       -> explicación -> contactar / menú
   2. Requisitos para ser Au Pair  -> requisitos -> contactar / menú
   3. Proceso de aplicación        -> cinco pasos -> contactar / menú
-  4. Contactar a mi asesor        -> enlace de perfilación
-       1. Ya llené mi perfil      -> confirmación y handoff humano
-       2. Regresar                -> menú principal
+  4. ¿Es seguro y confiable?      -> razones de confianza -> contactar / menú
+  5. Contactar a mi asesor        -> handoff humano inmediato
 ```
 
 ## Reglas globales
@@ -25,24 +24,24 @@ MENÚ PRINCIPAL
 - Después de una transferencia o cierre, un mensaje posterior inicia el flujo
   de nuevo.
 
-## Perfilación y transferencia
+## Contactar a mi asesor y transferencia
 
-En **Contactar a mi asesor**, ALICE solicita nombre, edad (18 a 29 años),
-correo, ciudad y nivel de inglés. Con el teléfono de WhatsApp, llama a APM para
-crear o reutilizar el lead y recibe su enlace de perfilación único. ALICE no
-crea el handoff hasta que la candidata confirma con la opción `1` que ya llenó
-su perfil.
+**Contactar a mi asesor** (opción 5 del menú, o las palabras clave globales)
+transfiere de inmediato a un asesor humano: ALICE ya no solicita nombre, edad,
+correo, ciudad ni nivel de inglés antes de la transferencia.
 
-Al ocurrir el handoff, ALICE guarda la solicitud y llama a
-`CRM_ALICE_HANDOFFS_URL` cuando está configurado. APM/CRM es responsable de
-asignar el asesor y abrir o continuar la atención humana en el buzón de
-WhatsApp.
+Al ocurrir el handoff, ALICE llama a `CRM_ALICE_HANDOFFS_URL` (cuando está
+configurado) con el teléfono de WhatsApp de la candidata. APM/CRM busca el
+lead por teléfono (con el correo como respaldo si no lo encuentra) y es
+responsable de asignar el asesor y abrir o continuar la atención humana en el
+buzón de WhatsApp. Si APM no encuentra el lead, ALICE reinicia el flujo al
+menú principal en vez de dejar a la candidata sin respuesta.
 
 ## Operación en WhatsApp
 
 El flujo interpreta texto y números, por lo que funciona con mensajes de texto
 sin ajustes adicionales en Meta. Si se habilitan listas o botones interactivos
-en una futura mejora, el menú de cuatro opciones debe ser una lista (los reply
+en una futura mejora, el menú de cinco opciones debe ser una lista (los reply
 buttons de WhatsApp admiten solamente tres opciones).
 
 Una plantilla aprobada por Meta es necesaria para iniciar conversaciones o

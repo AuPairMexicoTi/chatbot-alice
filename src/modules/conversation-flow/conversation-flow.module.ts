@@ -11,10 +11,8 @@ import { FLOW_DEFINITION_REPOSITORY } from './application/ports/flow-definition.
 import { PrismaFlowDefinitionRepository } from './infrastructure/repositories/prisma-flow-definition.repository';
 import { InMemoryFlowDefinitionRepository } from './infrastructure/repositories/in-memory-flow-definition.repository';
 import { ConfigService } from '@nestjs/config';
-import { APM_LEADS_PORT } from './application/ports/apm-leads.port';
 import { APM_HANDOFF_PORT } from './application/ports/apm-handoff.port';
 import { HttpApmHandoffAdapter } from './infrastructure/adapters/http-apm-handoff.adapter';
-import { HttpApmLeadsAdapter } from './infrastructure/adapters/http-apm-leads.adapter';
 import { ConversationFlowController } from './presentation/conversation-flow.controller';
 import { CreateFlowNodeUseCase } from './application/use-cases/create-flow-node.use-case';
 import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.use-case';
@@ -55,16 +53,11 @@ import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.
             ),
     },
     {
-      provide: APM_LEADS_PORT,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => new HttpApmLeadsAdapter(config),
-    },
-    {
       provide: APM_HANDOFF_PORT,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => new HttpApmHandoffAdapter(config),
     },
   ],
-  exports: [ConversationFlowStateService, APM_LEADS_PORT, APM_HANDOFF_PORT],
+  exports: [ConversationFlowStateService, APM_HANDOFF_PORT],
 })
 export class ConversationFlowModule {}

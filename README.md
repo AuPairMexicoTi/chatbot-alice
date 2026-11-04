@@ -58,18 +58,16 @@ AI provider selection:
 - `OPENAI_API_KEY` only when `AI_PROVIDER=openai`
 - `GEMINI_API_KEY` only when `AI_PROVIDER=gemini`
 
-CRM profiling-link integration:
+CRM human handoff integration:
 
-- `CRM_ALICE_LEADS_URL` is APM's internal `POST /api/v1/integrations/alice/leads` endpoint.
 - `CRM_ALICE_INTEGRATION_SECRET` must match APM's integration secret.
-- When a candidate completes the ALICE intake, APM creates or reuses the lead and returns that candidate's profiling link. ALICE sends that link before the human-advisor confirmation.
-- When the candidate requests an advisor, ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM creates an immediate WhatsApp follow-up in the assigned mailbox.
+- When the candidate requests an advisor (main menu option 5, or the `asesor`/`humano`/`ayuda` keywords from anywhere), ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM finds the lead by phone (falling back to email) and creates an immediate WhatsApp follow-up in the assigned mailbox. ALICE asks no qualifying questions before this call — leads are expected to already exist in APM by the time they reach ALICE.
 - APM is the source of truth for lead ownership. If a lead already has an advisor, ALICE keeps that assignment intact and sends the candidate to the Leads Mailbox WhatsApp link to request reassignment. An existing mailbox assignment also remains unchanged; only new or unassigned leads enter automatic distribution.
+- If APM cannot find the lead (the handoff request fails, e.g. a 422), ALICE restarts the flow to the main menu instead of leaving the candidate without a reply.
 
 Guided Au Pair flow:
 
-- When a candidate completes the WhatsApp intake, ALICE calls APM to create or reuse the lead and sends the unique profiling link returned by APM.
-- The human handoff occurs only after the candidate selects **Ya llené mi perfil / Quiero hablar con un asesor**.
+- The main menu offers four informational options (what an Au Pair does, requirements, application process, safety/trust) plus **Contactar a mi asesor**, which hands off immediately — no name/age/email/city/English-level questions.
 
 WhatsApp images (optional legacy assets):
 
@@ -82,7 +80,7 @@ CRM welcome templates:
 
 - Set `WHATSAPP_WELCOME_TEMPLATE_NAME` to an approved Meta template name (for example, `bienvenida_registro`) and `WHATSAPP_WELCOME_TEMPLATE_LANGUAGE=es_MX`.
 - Set `WHATSAPP_WELCOME_TEMPLATE_USES_NAME_PARAMETER=true` only when the Meta template contains `{{1}}` for the lead name. For the menu-first template without variables, set it to `false` so ALICE sends no body parameter to Meta.
-- When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header. The menu-first template can list options 1–4; the candidate's numeric reply enters the matching ALICE flow node without requiring a greeting.
+- When those values are configured, `POST /api/v1/webhooks/crm/welcome-message` sends the approved template with `principal.jpeg` as its image header. The menu-first template can list options 1–5; the candidate's numeric reply enters the matching ALICE flow node without requiring a greeting.
 - The `welcome_zapier_lead` auto-reply is provisioned by the database migration. It must remain active; its stored text is an administrative record, while WhatsApp sends the approved Meta template.
 - The template must only be triggered for leads that explicitly accepted WhatsApp communications.
 

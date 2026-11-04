@@ -1,5 +1,6 @@
 import { aupairFlowDefinition } from './aupair-flow.definition';
 import { ConversationFlowEngine } from './conversation-flow.engine';
+import { FlowDefinition } from './conversation-flow.types';
 
 describe('ConversationFlowEngine', () => {
   const engine = new ConversationFlowEngine();
@@ -24,8 +25,15 @@ describe('ConversationFlowEngine', () => {
     ['1', 'what-is-aupair-pdf', 'hermana mayor'],
     ['2', 'requirements', 'De 18 a 29 años'],
     ['3', 'application-process', 'Inscríbete al programa'],
+    ['4', 'is-it-safe', 'Entendemos tus dudas'],
+    ['5', 'human-handoff', 'comunicar con un asesor humano'],
     ['Que hace una Au pair??', 'what-is-aupair-pdf', 'hermana mayor'],
     ['¿Qué hace una Au Pair?', 'what-is-aupair-pdf', 'hermana mayor'],
+    [
+      'contactar a mi asesor',
+      'human-handoff',
+      'comunicar con un asesor humano',
+    ],
   ])('routes menu option %s to %s', (option, nodeId, expectedContent) => {
     const result = engine.advance(
       aupairFlowDefinition,
@@ -37,69 +45,16 @@ describe('ConversationFlowEngine', () => {
     expect(result.messages[0]).toContain(expectedContent);
   });
 
-  it('captures the candidate data before showing the profiling link', () => {
-    let contact = engine.advance(
+  it('hands off immediately when asking to contact an advisor, no questions asked', () => {
+    const result = engine.advance(
       aupairFlowDefinition,
       engine.start(aupairFlowDefinition).state,
-      text('4'),
+      text('5'),
     );
 
-    expect(contact.state.nodeId).toBe('contact-advisor');
-    expect(contact.state.status).toBe('ACTIVE');
-    expect(contact.requestHandoff).toBe(false);
-
-    for (const answer of [
-      'Ana López',
-      '29',
-      'ana@example.com',
-      'Guadalajara',
-      'Intermedio',
-    ])
-      contact = engine.advance(
-        aupairFlowDefinition,
-        contact.state,
-        text(answer),
-      );
-
-    expect(contact.state.nodeId).toBe('profiling-link');
-    expect(contact.state.variables).toMatchObject({
-      name: 'Ana López',
-      age: '29',
-      email: 'ana@example.com',
-      city: 'Guadalajara',
-      englishLevel: 'Intermedio',
-    });
-
-    const profile = engine.present(aupairFlowDefinition, {
-      ...contact.state,
-      variables: {
-        ...contact.state.variables,
-        profilingLink: 'https://aupair.example/perfilacion',
-      },
-    });
-    expect(profile.messages[0]).toContain('https://aupair.example/perfilacion');
-
-    const confirmation = engine.advance(
-      aupairFlowDefinition,
-      profile.state,
-      text('1'),
-    );
-    expect(confirmation.state.nodeId).toBe('advisor-confirmation');
-    expect(confirmation.state.status).toBe('AWAITING_HUMAN');
-    expect(confirmation.requestHandoff).toBe(true);
-    expect(confirmation.messages[0]).toContain(
-      'Gracias por completar tu perfil',
-    );
-  });
-
-  it('returns to the menu from the profile step', () => {
-    const state = {
-      ...engine.start(aupairFlowDefinition).state,
-      nodeId: 'profiling-link',
-    };
-    const result = engine.advance(aupairFlowDefinition, state, text('2'));
-
-    expect(result.state.nodeId).toBe('main-menu');
+    expect(result.state.nodeId).toBe('human-handoff');
+    expect(result.state.status).toBe('AWAITING_HUMAN');
+    expect(result.requestHandoff).toBe(true);
   });
 
   it.each([
@@ -115,7 +70,7 @@ describe('ConversationFlowEngine', () => {
     (messageType) => {
       const state = {
         ...engine.start(aupairFlowDefinition).state,
-        nodeId: 'capture-city',
+        nodeId: 'requirements',
       };
 
       const result = engine.advance(aupairFlowDefinition, state, {
@@ -128,61 +83,109 @@ describe('ConversationFlowEngine', () => {
     },
   );
 
-  it.each([
-    ['name', 'Ruben 😎', 'Por favor escribe tu nombre completo'],
-    ['name', '123', 'Por favor escribe tu nombre completo'],
-    ['age', 'tengo 24 perritos', 'Por favor escribe solo tu edad'],
-    ['age', '24 🎂', 'Por favor escribe solo tu edad'],
-    [
-      'email',
-      'ana😎@correo.com',
-      'Por favor escribe un correo electrónico válido',
-    ],
-    ['city', 'Cuernavaca 🔥', 'Por favor escribe el nombre de tu ciudad'],
-    ['city', '123', 'Por favor escribe el nombre de tu ciudad'],
-    ['englishLevel', 'muy bien 😍', 'Por favor indica tu nivel de inglés'],
-    ['englishLevel', '123', 'Por favor indica tu nivel de inglés'],
-  ])(
-    'rejects invalid %s captures without leaving the current question',
-    (capture, answer, expectedMessage) => {
-      const nodeIdByCapture = {
-        name: 'contact-advisor',
-        age: 'capture-age',
-        email: 'capture-email',
-        city: 'capture-city',
-        englishLevel: 'capture-english',
-      } as const;
-      const state = {
-        ...engine.start(aupairFlowDefinition).state,
-        nodeId: nodeIdByCapture[capture as keyof typeof nodeIdByCapture],
-      };
-
-      const result = engine.advance(aupairFlowDefinition, state, text(answer));
-
-      expect(result.state.nodeId).toBe(state.nodeId);
-      expect(result.messages[0]).toContain(expectedMessage);
-    },
-  );
-
-  it.each([
-    'Intermedio',
-    'B1',
-    'certificación TOEFL 80',
-    'avanzado con certificación',
-  ])('accepts a meaningful free-form English level: %s', (englishLevel) => {
-    const state = {
-      ...engine.start(aupairFlowDefinition).state,
-      nodeId: 'capture-english',
+  // Ningun nodo de aupairFlowDefinition usa `capture` desde que "Contactar a
+  // mi asesor" se volvio un handoff inmediato (ver aupair-flow.definition.ts)
+  // -- el mecanismo de captura del engine sigue siendo infraestructura
+  // generica reutilizable, asi que se cubre aqui con una definicion propia en
+  // vez de acoplarse al guion de produccion.
+  describe('generic capture validation (no production node uses this anymore)', () => {
+    const captureTestDefinition: FlowDefinition = {
+      entryNodeId: 'capture-name',
+      maxAttempts: 3,
+      nodes: {
+        'capture-name': {
+          id: 'capture-name',
+          content: 'name?',
+          capture: 'name',
+        },
+        'capture-age': { id: 'capture-age', content: 'age?', capture: 'age' },
+        'capture-email': {
+          id: 'capture-email',
+          content: 'email?',
+          capture: 'email',
+        },
+        'capture-city': {
+          id: 'capture-city',
+          content: 'city?',
+          capture: 'city',
+        },
+        'capture-english': {
+          id: 'capture-english',
+          content: 'english?',
+          capture: 'englishLevel',
+        },
+        'profiling-link': {
+          id: 'profiling-link',
+          content: 'link',
+          terminal: 'HANDOFF',
+        },
+        'human-handoff': {
+          id: 'human-handoff',
+          content: 'handoff',
+          terminal: 'HANDOFF',
+        },
+      },
     };
 
-    const result = engine.advance(
-      aupairFlowDefinition,
-      state,
-      text(englishLevel),
+    it.each([
+      ['name', 'Ruben 😎', 'Por favor escribe tu nombre completo'],
+      ['name', '123', 'Por favor escribe tu nombre completo'],
+      ['age', 'tengo 24 perritos', 'Por favor escribe solo tu edad'],
+      ['age', '24 🎂', 'Por favor escribe solo tu edad'],
+      [
+        'email',
+        'ana😎@correo.com',
+        'Por favor escribe un correo electrónico válido',
+      ],
+      ['city', 'Cuernavaca 🔥', 'Por favor escribe el nombre de tu ciudad'],
+      ['city', '123', 'Por favor escribe el nombre de tu ciudad'],
+      ['englishLevel', 'muy bien 😍', 'Por favor indica tu nivel de inglés'],
+      ['englishLevel', '123', 'Por favor indica tu nivel de inglés'],
+    ])(
+      'rejects invalid %s captures without leaving the current question',
+      (capture, answer, expectedMessage) => {
+        const nodeIdByCapture = {
+          name: 'capture-name',
+          age: 'capture-age',
+          email: 'capture-email',
+          city: 'capture-city',
+          englishLevel: 'capture-english',
+        } as const;
+        const state = {
+          ...engine.start(captureTestDefinition).state,
+          nodeId: nodeIdByCapture[capture as keyof typeof nodeIdByCapture],
+        };
+
+        const result = engine.advance(
+          captureTestDefinition,
+          state,
+          text(answer),
+        );
+
+        expect(result.state.nodeId).toBe(state.nodeId);
+        expect(result.messages[0]).toContain(expectedMessage);
+      },
     );
 
-    expect(result.state.nodeId).toBe('profiling-link');
-    expect(result.state.variables.englishLevel).toBe(englishLevel);
+    it.each([
+      'Intermedio',
+      'B1',
+      'certificación TOEFL 80',
+      'avanzado con certificación',
+    ])('accepts a meaningful free-form English level: %s', (englishLevel) => {
+      const state = {
+        ...engine.start(captureTestDefinition).state,
+        nodeId: 'capture-english',
+      };
+
+      const result = engine.advance(
+        captureTestDefinition,
+        state,
+        text(englishLevel),
+      );
+
+      expect(result.state.variables.englishLevel).toBe(englishLevel);
+    });
   });
 
   it('uses the human-handoff message for a global advisor request', () => {
@@ -219,31 +222,35 @@ describe('ConversationFlowEngine', () => {
   });
 
   describe('enterFromAdLeadPrefill', () => {
-    it('skips straight to the city question when name, age and email are all valid', () => {
+    it('routes straight to a human handoff when name, age and email are all valid', () => {
       const result = engine.enterFromAdLeadPrefill(aupairFlowDefinition, {
         name: 'maricruz mendragen',
         age: '21',
         email: 'maricruz@example.com',
       });
 
-      expect(result?.state.nodeId).toBe('capture-city');
+      expect(result?.state.nodeId).toBe('human-handoff');
+      expect(result?.state.status).toBe('AWAITING_HUMAN');
+      expect(result?.requestHandoff).toBe(true);
       expect(result?.state.variables).toEqual({
         name: 'maricruz mendragen',
         age: '21',
         email: 'maricruz@example.com',
       });
-      expect(result?.messages[0]).toContain('ciudad');
     });
 
-    it('stops at the first missing or invalid field instead of skipping it', () => {
+    it('still hands off when a secondary field is invalid, keeping only the valid ones', () => {
       const result = engine.enterFromAdLeadPrefill(aupairFlowDefinition, {
         name: 'maricruz mendragen',
         age: 'De 21 a 23 años',
         email: 'maricruz@example.com',
       });
 
-      expect(result?.state.nodeId).toBe('capture-age');
-      expect(result?.state.variables).toEqual({ name: 'maricruz mendragen' });
+      expect(result?.state.nodeId).toBe('human-handoff');
+      expect(result?.state.variables).toEqual({
+        name: 'maricruz mendragen',
+        email: 'maricruz@example.com',
+      });
     });
 
     it('returns null when not even the name is rescuable', () => {

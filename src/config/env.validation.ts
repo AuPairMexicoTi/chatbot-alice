@@ -82,7 +82,6 @@ export const envValidationSchema = Joi.object({
   AI_MAX_OUTPUT_TOKENS: Joi.number().min(1).required(),
   AI_STORE: Joi.boolean().required(),
   CRM_WEBHOOK_SECRET: Joi.string().allow('').required(),
-  CRM_ALICE_LEADS_URL: Joi.string().uri().allow('').required(),
   CRM_ALICE_HANDOFFS_URL: Joi.string().uri().allow('').required(),
   CRM_ALICE_INTEGRATION_SECRET: Joi.string().allow('').required(),
 }).unknown(true);

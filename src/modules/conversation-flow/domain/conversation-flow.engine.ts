@@ -33,50 +33,33 @@ export class ConversationFlowEngine {
     return this.enter(definition, state);
   }
 
-  // Precarga name/age/email a partir del formulario precargado de un
-  // anuncio "Click to WhatsApp" de Meta (ver meta-ad-lead-form.parser.ts) y
-  // arranca el flujo justo despues del ultimo campo valido, en vez de
-  // evaluar ese texto como respuesta al menu principal. Se detiene en el
-  // primer campo ausente o invalido -- nunca salta un paso sin dato
-  // confirmado -- y devuelve null si ni siquiera el nombre es rescatable,
-  // para que el llamador caiga de vuelta al flujo normal.
+  // Los anuncios "Click to WhatsApp" de Meta precargan el compositor con un
+  // mensaje de formulario cuando el lead toca el boton del anuncio sin
+  // editarlo (ver meta-ad-lead-form.parser.ts). Ya no hay un sub-flujo de
+  // captura al que adelantarse (ver aupair-flow.definition.ts): "Contactar a
+  // mi asesor" ahora es un handoff inmediato, asi que un lead de anuncio
+  // reconocido tambien va directo a un asesor humano, llevando el
+  // nombre/edad/correo que se pudieron rescatar y validar del formulario (el
+  // correo sirve de respaldo para que APM encuentre el lead si el telefono
+  // no basta -- ver apm-handoff.port.ts). Devuelve null si ni siquiera el
+  // nombre es rescatable, para que el llamador caiga de vuelta al flujo
+  // normal.
   enterFromAdLeadPrefill(
     definition: FlowDefinition,
     candidates: MetaAdLeadFormCandidates,
   ): FlowResult | null {
-    const nextNodeAfter: Record<'name' | 'age' | 'email', string> = {
-      name: 'capture-age',
-      age: 'capture-email',
-      email: 'capture-city',
-    };
-    const steps: Array<{
-      field: 'name' | 'age' | 'email';
-      isValid: (value: string) => boolean;
-      normalize: (value: string) => string;
-    }> = [
-      { field: 'name', isValid: (v) => this.isValidFullName(v), normalize: (v) => v },
-      {
-        field: 'age',
-        isValid: (v) => this.isValidAge(v),
-        normalize: (v) => String(this.extractAge(v)),
-      },
-      { field: 'email', isValid: (v) => this.isValidEmail(v), normalize: (v) => v },
-    ];
-
     const variables: Record<string, string> = {};
-    let lastCaptured: 'name' | 'age' | 'email' | null = null;
+    if (candidates.name && this.isValidFullName(candidates.name))
+      variables.name = candidates.name;
+    if (candidates.age && this.isValidAge(candidates.age))
+      variables.age = String(this.extractAge(candidates.age));
+    if (candidates.email && this.isValidEmail(candidates.email))
+      variables.email = candidates.email;
 
-    for (const step of steps) {
-      const raw = candidates[step.field];
-      if (raw === undefined || !step.isValid(raw)) break;
-      variables[step.field] = step.normalize(raw);
-      lastCaptured = step.field;
-    }
-
-    if (!lastCaptured) return null;
+    if (!variables.name) return null;
 
     return this.enter(definition, {
-      nodeId: nextNodeAfter[lastCaptured],
+      nodeId: this.terminalNodeId(definition, 'HANDOFF'),
       status: 'ACTIVE',
       attempts: 0,
       variables,
@@ -300,7 +283,7 @@ export class ConversationFlowEngine {
 
   private invalidReply(nodeId: string): string {
     if (nodeId === 'main-menu') {
-      return 'No entendí tu respuesta. Responde con:\n\n1️⃣ ¿Qué hace una Au Pair?\n2️⃣ Requisitos para ser Au Pair\n3️⃣ Proceso general de aplicación\n4️⃣ Contactar a mi asesor\n\nTambién puedes escribir “asesor”.';
+      return 'No entendí tu respuesta. Responde con:\n\n1️⃣ ¿Qué hace una Au Pair?\n2️⃣ Requisitos para ser Au Pair\n3️⃣ Proceso general de aplicación\n4️⃣ ¿Es seguro y confiable?\n5️⃣ Contactar a mi asesor\n\nTambién puedes escribir “asesor”.';
     }
 
     return 'No entendí tu respuesta. Elige una de las opciones indicadas o escribe “menú” para volver al inicio.';

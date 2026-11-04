@@ -2,7 +2,7 @@ import { FlowDefinition } from './conversation-flow.types';
 
 const nextStepOptions = {
   '1|1️⃣|aplicar|ya quiero aplicar|contactar asesor|contactar a mi asesor':
-    'contact-advisor',
+    'human-handoff',
   '2|2️⃣|menú|menu|regresar|regresar al menú principal|regresar al menu principal':
     'main-menu',
 };
@@ -16,76 +16,40 @@ export const aupairFlowDefinition: FlowDefinition = {
     'main-menu': {
       id: 'main-menu',
       content:
-        '¡Hola! 👋✨ Espero que estés teniendo un gran día. 💖 Te damos la bienvenida a Au Pair Mexico 🇲🇽✈️\n\nSer Au Pair es una experiencia increíble que te permitirá crecer personal y profesionalmente. 🌎💫 Vivirás en el extranjero, perfeccionarás un idioma 🗣️, cuidarás a los niños de una familia anfitriona 👧🧸 y descubrirás nuevas culturas mientras te reinventas como persona. 🌱💕\n\nEstamos avalados por IAPA (International Au Pair Association) 🌍🤝 y WYSE Travel Confederation.\n\n🎒💖 ¿Cómo te gustaría comenzar tu aventura? Selecciona una opción del menú 👇\n\n1️⃣ 👧 ¿Qué hace una Au Pair? 🧸\n2️⃣ 🌟 Requisitos para ser Au Pair\n3️⃣ 📋 Proceso general de aplicación 🚀\n4️⃣ 💌 ¡Contactar a mi asesor! 👩‍💻',
+        '¡Hola! 👋✨ Te damos la bienvenida a Au Pair Mexico 🇲🇽✈️\n\nSer Au Pair es una experiencia increíble que te permitirá vivir en el extranjero con todo pagado a cambio de cuidar a los niños de una familia anfitriona 👧🧸\n\nPodrás conocer lugares nuevos, perfeccionar otro idioma y recibir apoyo económico durante toda tu estancia 🌎💫\n\nSomos una empresa con 24 años de experiencia, ¡súmate a las más de 8,000 Au Pairs que han vivido esta aventura con nosotros! Siempre te acompañaremos en todo el proceso garantizando tu tranquilidad y seguridad. Además, estamos avalados por IAPA, WYSE Travel Confederation y somos miembros fundadores de la AMAAP. 🌍\n\n🎒💖 ¿Cómo te gustaría comenzar tu aventura? Selecciona una opción:\n\n1️⃣ 👧 ¿Qué hace una Au Pair?\n2️⃣ 🌟 Requisitos para ser Au Pair\n3️⃣ 📋 Proceso general de aplicación\n4️⃣ 👀 ¿Es seguro y confiable?\n5️⃣ 💌 ¡Contactar a mi asesor!',
       options: {
         '1|1️⃣|qué hace una au pair|que hace una au pair': 'what-is-aupair-pdf',
         '2|2️⃣|requisitos|requisitos para ser au pair': 'requirements',
         '3|3️⃣|proceso|proceso general de aplicación|proceso general de aplicacion':
           'application-process',
-        '4|4️⃣|contactar a mi asesor|contactar asesor|asesor': 'contact-advisor',
+        '4|4️⃣|es seguro y confiable|es seguro|seguro y confiable|confiable':
+          'is-it-safe',
+        '5|5️⃣|contactar a mi asesor|contactar asesor|asesor': 'human-handoff',
       },
     },
     'what-is-aupair-pdf': {
       id: 'what-is-aupair-pdf',
       content:
-        '👧 ¿Qué hace una Au Pair? 🧸💖\n\n¡Serás como la hermana mayor del hogar! 🏡💕\n\nComo Au Pair, apoyarás a tu familia anfitriona en el cuidado de los pequeños 👶🧸, compartirás tu cultura 🌎, aprenderás nuevas costumbres ✨🛫 y vivirás una experiencia que te ayudará a crecer y ser más independiente.\n\n¡Prepárate para crear recuerdos inolvidables! 📸💗\n\n¿Qué te gustaría hacer ahora? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
+        '👧 ¿Qué hace una Au Pair? 🧸💖\n\n¡Serás como la hermana mayor del hogar! 🏡💕\n\nComo Au Pair, apoyarás a tu familia anfitriona en el cuidado de los pequeños 👶🧸, compartirás tu cultura 🌎, aprenderás nuevas costumbres y vivirás una experiencia que te ayudará a crecer y ser más independiente ✨🛫\n\n¡Prepárate para crear recuerdos inolvidables! 📸💗\n\n¿Qué te gustaría hacer ahora? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
       options: nextStepOptions,
     },
     requirements: {
       id: 'requirements',
       content:
-        '🌟 Requisitos para ser Au Pair\n\n¡Conoce los requisitos generales para comenzar tu aventura como Au Pair! ✈️💖\n\n✅ Edad: De 18 a 29 años, según el destino y las condiciones del programa.\n💗 Estado civil: Ser soltera y no tener hijos.\n🎓 Escolaridad: Contar con certificado de preparatoria.\n🩺 Salud: Contar con las condiciones físicas y mentales necesarias para participar en el programa y cumplir con sus responsabilidades.\n\n📌 Importante: Los requisitos pueden variar según el país de destino. Tu asesor te ayudará a confirmar si cumples con las condiciones del programa que te interesa. 🌎✨\n\n¿Qué te gustaría hacer ahora? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
+        '🌟 Requisitos para ser Au Pair\n\n¡Conoce los requisitos generales para comenzar tu aventura! ✈️💖\n\n✅ Edad: De 18 a 29 años (según el destino).\n💗 Estado civil: Soltera y sin hijos.\n🎓 Escolaridad: Certificado de preparatoria o equivalente.\n🩺 Salud: Salud física y mental adecuada para las actividades del programa.\n\n📌 Importante: Los requisitos pueden variar según el país de destino. Tu asesor te ayudará a confirmar si cumples con las condiciones del programa que te interesa. 🌎✨\n\n¿Qué te gustaría hacer ahora? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
       options: nextStepOptions,
     },
     'application-process': {
       id: 'application-process',
       content:
-        '📋 Proceso general de aplicación 🚀✈️\n\n¡Tu aventura comienza aquí! 💖🌎 Te acompañamos paso a paso para que puedas cumplir tu sueño de ser Au Pair. 🧳✨\n\n🗺️ ¿Cómo funciona el proceso?\n\n1️⃣ Inscríbete al programa 📝\nInicia tu proceso con Au Pair Mexico y recibe orientación sobre el destino que te interesa.\n\n2️⃣ Completa tu expediente 📂\nEntrega la documentación necesaria y asegúrate de cumplir con los requisitos correspondientes.\n\n3️⃣ Elige a tu familia anfitriona 👨‍👩‍👧‍👦\n💕 Este proceso se conoce como match. Conoce a las familias disponibles y encuentra aquella con la que tengas mayor afinidad.\n\n4️⃣ Tramita tu visa 🛂\nRecibe orientación sobre los trámites migratorios correspondientes a tu destino y prepárate para tu viaje. ✈️🌍\n\n5️⃣ ¡Comienza tu experiencia Au Pair! 🎉🧳\nPrepara tus maletas, despídete de tus seres queridos y disfruta esta nueva etapa llena de aprendizajes, amistades y aventuras. 💖📸\n\n¿Cómo te gustaría continuar? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
+        '📋 Proceso general de aplicación 🚀✈️\n\n¡Tu aventura comienza aquí! 💖🌎 Te acompañamos paso a paso para cumplir tu sueño. 🧳✨\n\n🗺️ ¿Cómo funciona el proceso?\n\n1️⃣ Inscríbete al programa 📝\nRecibe orientación sobre el destino de tu interés.\n\n2️⃣ Completa tu expediente 📂\nJunta tu documentación y cumple con los requisitos del país.\n\n3️⃣ Elige a tu familia anfitriona (Match) 👨‍👩‍👧‍👦\nConoce a las familias disponibles y elige la ideal para ti.\n\n4️⃣ Tramita tu visa 🛂\nTe guiamos en los trámites migratorios correspondientes.\n\n5️⃣ ¡Comienza tu experiencia! 🎉🧳\nPrepara tus maletas y disfruta esta etapa llena de aprendizajes y aventuras. 💖📸\n\n¿Cómo te gustaría continuar? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
       options: nextStepOptions,
     },
-    'contact-advisor': {
-      id: 'contact-advisor',
+    'is-it-safe': {
+      id: 'is-it-safe',
       content:
-        '💌 ¡Contactar a mi asesor! 👩‍💻💖\n\n¡Tu aventura Au Pair está cada vez más cerca! ✈️🌎💕\nPara poder orientarte mejor, necesitamos conocer un poquito más sobre ti. 🌟\n\n¿Cuál es tu nombre completo? ✍️',
-      capture: 'name',
-    },
-    'capture-age': {
-      id: 'capture-age',
-      content: '¡Mucho gusto, {{name}}! 💖 ¿Cuántos años tienes? 🎂',
-      capture: 'age',
-    },
-    'capture-email': {
-      id: 'capture-email',
-      content: '¡Perfecto! ¿Cuál es tu correo electrónico? 📧',
-      capture: 'email',
-    },
-    'capture-city': {
-      id: 'capture-city',
-      content: '¿En qué ciudad vives? 📍',
-      capture: 'city',
-    },
-    'capture-english': {
-      id: 'capture-english',
-      content:
-        'Por último, ¿cuál es tu nivel de inglés o certificación? 🗣️\n\nPuedes responder, por ejemplo: básico, intermedio, avanzado, B1, IELTS o TOEFL 80.',
-      capture: 'englishLevel',
-    },
-    'profiling-link': {
-      id: 'profiling-link',
-      content:
-        '📝 Completa tu perfil en el siguiente enlace:\n👉 {{profilingLink}} 🔗💻\n\n🧳💖 ¡Es el primer paso para conocer tus intereses y ayudarte a encontrar el programa ideal para ti!\n\nCuando termines, selecciona una opción 👇\n\n1️⃣ ✅ Ya llené mi perfil / Quiero hablar con un asesor 💬\n2️⃣ 🏠 Regresar al menú principal',
-      options: {
-        '1|1️⃣|ya llené mi perfil|ya llene mi perfil|quiero hablar con un asesor|hablar con asesor':
-          'advisor-confirmation',
-        '2|2️⃣|menú|menu|regresar|regresar al menú principal|regresar al menu principal':
-          'main-menu',
-      },
-    },
-    'advisor-confirmation': {
-      id: 'advisor-confirmation',
-      content:
-        '¡Excelente! 🎉💖 ¡Gracias por completar tu perfil!\n\nAhora nuestro equipo podrá orientarte para resolver tus dudas y explicarte los siguientes pasos de tu proceso. 🌎✈️\n\n👩‍💻 En breve podrás continuar tu atención con tu asesor de Au Pair Mexico. 🧳💕🌟\n\n¡Estamos emocionados de acompañarte en el camino hacia esta gran experiencia!',
-      terminal: 'HANDOFF',
+        '👀 ¿Es seguro y confiable? 🛡️✨\n\nEntendemos tus dudas, ¡tu seguridad es lo más importante para nosotros!\n\nRazones sólidas para confiar en Au Pair Mexico:\n✅ 24 años de experiencia.\n✅ Más de 8,000 Au Pairs colocadas con éxito.\n✅ Avalados por IAPA y WYSE Travel Confederation.\n✅ Miembros fundadores de la AMAAP.\n✅ Convenios con universidades como EBC, Ibero, La Salle y UNAM.\n\nTe respaldamos en todo momento:\n1️⃣ Match Seguro: Familias previamente evaluadas y reguladas.\n2️⃣ Asesoría Profesional: Apoyo en expediente, trámites y visa.\n3️⃣ Acompañamiento: Monitoreo constante durante toda tu estancia.\n\n¿Qué te gustaría hacer ahora? 👇\n\n1️⃣ 💌 ¡Contactar a mi asesor!\n2️⃣ 🏠 Regresar al menú principal',
+      options: nextStepOptions,
     },
     'human-handoff': {
       id: 'human-handoff',

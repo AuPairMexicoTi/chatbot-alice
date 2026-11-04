@@ -80,7 +80,7 @@ describe('ConversationFlowStateService', () => {
   it('restarts a finished flow when the candidate sends another message', async () => {
     const repository = repositoryWith({
       state: {
-        nodeId: 'advisor-confirmation',
+        nodeId: 'human-handoff',
         status: 'AWAITING_HUMAN',
         attempts: 0,
         variables: {},
@@ -100,7 +100,34 @@ describe('ConversationFlowStateService', () => {
     expect(result.messages[0]).toContain('bienvenida');
   });
 
-  it('precarga datos del formulario de un anuncio de Meta en vez de responder "No entendí"', async () => {
+  it('restarts when the stored node id no longer exists in the definition', async () => {
+    // Escenario real encontrado en produccion: una conversacion ACTIVE que
+    // quedo parada en un nodo que un cambio de guion despues elimino (ver
+    // aupair-flow.definition.ts) -- antes de este chequeo, advance() hacia
+    // crashear al buscar un nodo inexistente.
+    const repository = repositoryWith({
+      state: {
+        nodeId: 'capture-age',
+        status: 'ACTIVE',
+        attempts: 0,
+        variables: { name: 'Ana López' },
+      },
+      updatedAt: now,
+    });
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+    );
+
+    const result = await service.advance('conversation-1', textInput);
+
+    expect(result.state.nodeId).toBe('main-menu');
+    expect(result.state.status).toBe('ACTIVE');
+    expect(result.messages[0]).toContain('bienvenida');
+  });
+
+  it('precarga datos del formulario de un anuncio de Meta y manda directo a un asesor', async () => {
     const repository = repositoryWith(null);
     const service = new ConversationFlowStateService(
       repository,
@@ -125,68 +152,12 @@ describe('ConversationFlowStateService', () => {
     });
 
     expect(result.messages[0]).not.toContain('No entendí');
-    expect(result.state.nodeId).toBe('capture-city');
-    expect(result.messages[0]).toContain('ciudad');
+    expect(result.state.nodeId).toBe('human-handoff');
+    expect(result.state.status).toBe('AWAITING_HUMAN');
     expect(result.state.variables).toEqual({
       name: 'maricruz mendragen',
       age: '21',
       email: 'maricruzmondragon333@gmail.com',
     });
-  });
-
-  it('creates or finds the lead and sends the unique profiling link', async () => {
-    let stored: ConversationFlowStateRecord | null = null;
-    const repository: ConversationFlowStateRepository = {
-      findByConversationId: async () => stored,
-      save: async (
-        _conversationId: string,
-        state: ConversationFlowStateRecord['state'],
-      ) => {
-        stored = { state, updatedAt: now };
-      },
-    };
-    const apmLeadsPort = {
-      createOrFind: jest.fn().mockResolvedValue({
-        profilingLink: 'https://crm.example/perfilacion/encrypted-lead-id',
-      }),
-    };
-    const service = new ConversationFlowStateService(
-      repository,
-      30 * 60 * 1000,
-      () => now,
-      undefined,
-      apmLeadsPort,
-    );
-
-    let finalResult: Awaited<
-      ReturnType<ConversationFlowStateService['advance']>
-    > | null = null;
-    for (const answer of [
-      '4',
-      'Ana López',
-      '29',
-      'ana@example.com',
-      'Guadalajara',
-      'Intermedio',
-    ])
-      finalResult = await service.advance(
-        'conversation-1',
-        { text: answer, messageType: 'TEXT' },
-        '5215550000001',
-      );
-
-    expect(apmLeadsPort.createOrFind).toHaveBeenCalledWith({
-      name: 'Ana López',
-      age: 29,
-      phone: '5215550000001',
-      email: 'ana@example.com',
-      city: 'Guadalajara',
-      englishLevel: 'Intermedio',
-    });
-    if (!finalResult) throw new Error('Expected a flow result');
-    expect(finalResult.state.nodeId).toBe('profiling-link');
-    expect(finalResult.state.variables.profilingLink).toBe(
-      'https://crm.example/perfilacion/encrypted-lead-id',
-    );
   });
 });

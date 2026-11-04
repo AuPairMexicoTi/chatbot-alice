@@ -12,7 +12,6 @@ import { aupairFlowDefinition } from '../domain/aupair-flow.definition';
 import { FlowInput, FlowResult } from '../domain/conversation-flow.types';
 import { parseMetaAdLeadFormCandidates } from '../domain/meta-ad-lead-form.parser';
 import { InMemoryConversationFlowStateRepository } from '../infrastructure/repositories/in-memory-conversation-flow-state.repository';
-import { APM_LEADS_PORT, ApmLeadsPort } from './ports/apm-leads.port';
 
 // Respaldo usado cuando no se inyecta un FlowDefinitionRepository explícito
 // (ej. en tests que construyen el servicio directamente) — mantiene el
@@ -46,22 +45,21 @@ export class ConversationFlowStateService {
     private readonly now: () => Date = () => new Date(),
     @Inject(FLOW_DEFINITION_REPOSITORY)
     private readonly flowDefinitionRepository: FlowDefinitionRepository = staticFlowDefinitionRepository,
-    @Inject(APM_LEADS_PORT)
-    private readonly apmLeadsPort?: ApmLeadsPort,
   ) {}
 
-  async advance(
-    conversationId: string,
-    input: FlowInput,
-    phoneNumber?: string,
-  ): Promise<FlowResult> {
+  async advance(conversationId: string, input: FlowInput): Promise<FlowResult> {
     const record = await this.repository.findByConversationId(conversationId);
+    const definition = await this.flowDefinitionRepository.getDefinition();
+    // Un nodo guardado puede dejar de existir cuando la definicion cambia
+    // (ver aupair-flow.definition.ts) -- sin este chequeo, una conversacion
+    // ACTIVE parada en un nodo borrado haria crashear advance() al buscarlo.
+    // Se trata igual que cualquier otra razon para reiniciar al menu.
     const shouldRestart =
       !record ||
       record.state.status !== 'ACTIVE' ||
+      !definition.nodes[record.state.nodeId] ||
       this.now().getTime() - record.updatedAt.getTime() >=
         this.inactivityTimeoutMs;
-    const definition = await this.flowDefinitionRepository.getDefinition();
     // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
     // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
     // toda la bienvenida; un saludo explícito continúa mostrando el menú.
@@ -87,27 +85,8 @@ export class ConversationFlowStateService {
       ? this.engine.enterFromAdLeadPrefill(definition, adLeadCandidates)
       : null;
 
-    let result =
+    const result =
       adLeadResult ?? this.engine.advance(definition, currentState, input);
-    if (result.state.nodeId === 'profiling-link') {
-      if (!phoneNumber)
-        throw new Error('Phone number is required to create an APM lead');
-      if (!this.apmLeadsPort)
-        throw new Error('APM leads port is not configured');
-      const values = result.state.variables;
-      const lead = await this.apmLeadsPort.createOrFind({
-        name: values.name,
-        age: Number(values.age),
-        phone: phoneNumber,
-        email: values.email,
-        city: values.city,
-        englishLevel: values.englishLevel,
-      });
-      result = this.engine.present(definition, {
-        ...result.state,
-        variables: { ...values, profilingLink: lead.profilingLink },
-      });
-    }
     await this.repository.save(conversationId, result.state);
     return result;
   }
