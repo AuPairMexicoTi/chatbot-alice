@@ -62,7 +62,8 @@ CRM human handoff integration:
 
 - `CRM_ALICE_INTEGRATION_SECRET` must match APM's integration secret.
 - When the candidate requests an advisor (main menu option 5, or the `asesor`/`humano`/`ayuda` keywords from anywhere), ALICE calls `CRM_ALICE_HANDOFFS_URL` so APM finds the lead by phone (falling back to email) and creates an immediate WhatsApp follow-up in the assigned mailbox. ALICE asks no qualifying questions before this call — leads are expected to already exist in APM by the time they reach ALICE.
-- APM is the source of truth for lead ownership. If a lead already has an advisor, ALICE keeps that assignment intact and sends the candidate to the Leads Mailbox WhatsApp link to request reassignment. An existing mailbox assignment also remains unchanged; only new or unassigned leads enter automatic distribution.
+- APM is the source of truth for lead ownership. If a lead already has an advisor, ALICE keeps that assignment intact and shows the candidate that advisor's real contact — same as a brand-new assignment — instead of a mailbox/reassignment message. Only new or unassigned leads enter automatic distribution.
+- Handoff replies always use the advisor actually assigned by the CRM; WhatsApp links are normalized for Mexico and known placeholder numbers are omitted. If that advisor is itself the Buzón de Leads mailbox account, ALICE just says a human will reach out, with no link.
 - If APM cannot find the lead (the handoff request fails, e.g. a 422), ALICE restarts the flow to the main menu instead of leaving the candidate without a reply.
 
 Guided Au Pair flow:

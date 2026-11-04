@@ -230,14 +230,14 @@ export class LogsService {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      let parsed: Record<string, unknown>;
+      let parsedValue: unknown;
       try {
-        const value: unknown = JSON.parse(trimmed);
-        if (!isRecord(value)) continue;
-        parsed = value;
+        parsedValue = JSON.parse(trimmed);
       } catch {
         continue;
       }
+      if (!isRecord(parsedValue)) continue;
+      const parsed = parsedValue;
 
       const levelNumber = typeof parsed.level === 'number' ? parsed.level : 30;
       const levelName = PINO_LEVEL_TO_NAME[levelNumber] ?? 'info';
@@ -285,8 +285,9 @@ export class LogsService {
 
     const req = isRecord(parsed.req) ? parsed.req : null;
     if (req) {
-      if (typeof req.id === 'string' || typeof req.id === 'number')
+      if (typeof req.id === 'string' || typeof req.id === 'number') {
         context.request_id = String(req.id);
+      }
       if (typeof req.method === 'string') context.method = req.method;
       if (typeof req.url === 'string') context.route = req.url;
       if (typeof req.remoteAddress === 'string') context.ip = req.remoteAddress;

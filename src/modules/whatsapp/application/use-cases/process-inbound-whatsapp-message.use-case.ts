@@ -198,18 +198,31 @@ export class ProcessInboundWhatsAppMessageUseCase {
   }
 
   private advisorMessage(handoff: ApmHandoffResult): string {
-    if (handoff.routing === 'ALREADY_ASSIGNED') {
-      const mailboxLink = handoff.mailboxWhatsAppLink
-        ? `\n\n📲 Solicita la reasignación aquí:\n👉 ${handoff.mailboxWhatsAppLink}`
-        : '';
-      return `💖 Ya cuentas con un asesor asignado. Para respetar tu seguimiento, no haremos cambios automáticos.${mailboxLink}\n\nEl Buzón de Leads revisará tu solicitud de reasignación. 🔔`;
-    }
     const advisor = handoff.advisor;
     if (advisor.isMailbox)
       return '¡Excelente! 🙌✨ Un asesor se pondrá en contacto contigo por este medio o por llamada telefónica. 📞\n\n¡Activa tus notificaciones! 🔔💖';
-    const link = advisor.whatsappLink
-      ? `\n\n📲 Contáctalo aquí, por favor:\n👉 ${advisor.whatsappLink}`
+    const whatsappLink = this.advisorWhatsAppLink(advisor.whatsappLink);
+    const link = whatsappLink
+      ? `\n\n📲 Contáctalo aquí, por favor:\n👉 ${whatsappLink}`
       : '';
     return `¡Excelente! 🙌✨ Tu asesor asignado es *${advisor.name ?? 'tu asesor'}*.\n\nSe pondrá en contacto contigo por este medio o por llamada telefónica. 📞${link}\n\n¡Activa tus notificaciones! 🔔💖`;
+  }
+
+  private advisorWhatsAppLink(value: string | null): string | null {
+    if (!value) return null;
+    const match = /^https:\/\/wa\.me\/(\d{10,15})\/?$/u.exec(value.trim());
+    if (!match) return null;
+    let digits = match[1];
+    const national = digits.slice(-10);
+    if (
+      ['1234567890', '0123456789', '9876543210', '0987654321'].includes(
+        national,
+      ) ||
+      /^(\d)\1{9}$/u.test(national)
+    )
+      return null;
+    if (/^\d{10}$/u.test(digits)) digits = `52${digits}`;
+    else if (/^521\d{10}$/u.test(digits)) digits = `52${digits.slice(3)}`;
+    return `https://wa.me/${digits}`;
   }
 }

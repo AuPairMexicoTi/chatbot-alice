@@ -268,65 +268,86 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     expect(outbound?.metadata.responseSource).toBe('CONVERSATION_FLOW');
   });
 
-  it('keeps an existing advisor assignment and directs reassignment requests to the mailbox', async () => {
-    const store = new InMemoryStore();
-    const contactRepository = new InMemoryContactRepository(store);
-    const conversationRepository = new InMemoryConversationRepository(store);
-    const messageRepository = new InMemoryMessageRepository(store);
-    const aiRunRepository = new InMemoryAiRunRepository(store);
-    const handoffRepository = new InMemoryHandoffRepository(store);
-    const queue = new InMemoryQueueAdapter();
-    const handoffUseCase = new RequestHumanHandoffUseCase(
-      handoffRepository,
-      conversationRepository,
-    );
-    const apmHandoffPort = {
-      request: jest.fn().mockResolvedValue({
-        routing: 'ALREADY_ASSIGNED' as const,
-        advisor: {
-          name: 'Asesor existente',
-          whatsappLink: 'https://wa.me/5215550000000',
-          imageUrl: 'https://crm.example/advisor.jpg',
-          isMailbox: false,
-        },
-        mailboxWhatsAppLink: 'https://wa.me/5215551111111',
-      }),
-    };
-    const useCase = new ProcessInboundWhatsAppMessageUseCase(
-      contactRepository,
-      conversationRepository,
-      messageRepository,
-      new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
-      new GenerateConversationReplyUseCase(
-        new MockAiGateway(),
-        aiRunRepository,
+  it.each([
+    [
+      'ALREADY_ASSIGNED',
+      'https://wa.me/5215550000000',
+      'https://wa.me/525550000000',
+    ],
+    [
+      'NEW_ASSIGNMENT',
+      'https://wa.me/5550000000',
+      'https://wa.me/525550000000',
+    ],
+    ['ALREADY_ASSIGNED', 'https://wa.me/521234567890', null],
+    ['ALREADY_ASSIGNED', null, null],
+  ] as const)(
+    'uses the assigned advisor contact for %s with phone %s',
+    async (routing, whatsappLink, expectedLink) => {
+      const store = new InMemoryStore();
+      const contactRepository = new InMemoryContactRepository(store);
+      const conversationRepository = new InMemoryConversationRepository(store);
+      const messageRepository = new InMemoryMessageRepository(store);
+      const aiRunRepository = new InMemoryAiRunRepository(store);
+      const handoffRepository = new InMemoryHandoffRepository(store);
+      const queue = new InMemoryQueueAdapter();
+      const handoffUseCase = new RequestHumanHandoffUseCase(
+        handoffRepository,
+        conversationRepository,
+      );
+      const apmHandoffPort = {
+        request: jest.fn().mockResolvedValue({
+          routing,
+          advisor: {
+            name: 'Asesor existente',
+            whatsappLink,
+            imageUrl: 'https://crm.example/advisor.jpg',
+            isMailbox: false,
+          },
+          mailboxWhatsAppLink: 'https://wa.me/1234567890',
+        }),
+      };
+      const useCase = new ProcessInboundWhatsAppMessageUseCase(
+        contactRepository,
+        conversationRepository,
         messageRepository,
-        [new RequestHumanHandoffTool(handoffUseCase)],
-      ),
-      new QueueOutboundMessageUseCase(queue),
-      new ConversationFlowStateService(),
-      handoffUseCase,
-      apmHandoffPort,
-    );
+        new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
+        new GenerateConversationReplyUseCase(
+          new MockAiGateway(),
+          aiRunRepository,
+          messageRepository,
+          [new RequestHumanHandoffTool(handoffUseCase)],
+        ),
+        new QueueOutboundMessageUseCase(queue),
+        new ConversationFlowStateService(),
+        handoffUseCase,
+        apmHandoffPort,
+      );
 
-    for (const [externalId, text] of [
-      ['wamid.flow.1', 'Hola'],
-      ['wamid.flow.2', '5'],
-    ]) {
-      await useCase.execute(incomingMessage(externalId, text));
-    }
+      for (const [externalId, text] of [
+        ['wamid.flow.1', 'Hola'],
+        ['wamid.flow.2', '5'],
+      ]) {
+        await useCase.execute(incomingMessage(externalId, text));
+      }
 
-    const handoffMessage = [...store.messages.values()].find(
-      (message) =>
-        message.direction === 'OUTBOUND' &&
-        message.text?.includes('Ya cuentas con un asesor asignado'),
-    );
-    expect(handoffMessage).toBeDefined();
-    expect(handoffMessage?.text).toContain('https://wa.me/5215551111111');
-    expect(handoffMessage?.text).not.toContain('Asesor existente');
-    expect(handoffMessage?.type).toBe('TEXT');
-    expect(apmHandoffPort.request).toHaveBeenCalledTimes(1);
-  });
+      const handoffMessage = [...store.messages.values()].find(
+        (message) =>
+          message.direction === 'OUTBOUND' &&
+          message.text?.includes('Tu asesor asignado es'),
+      );
+      expect(handoffMessage).toBeDefined();
+      expect(handoffMessage?.text).toContain('Asesor existente');
+      expect(handoffMessage?.text).not.toContain('1234567890');
+      expect(handoffMessage?.text).not.toContain('reasignación');
+      if (expectedLink) expect(handoffMessage?.text).toContain(expectedLink);
+      else expect(handoffMessage?.text).not.toContain('https://wa.me/');
+      expect(handoffMessage?.type).toBe(
+        routing === 'NEW_ASSIGNMENT' ? 'IMAGE' : 'TEXT',
+      );
+      expect(apmHandoffPort.request).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('responde con el menú (en vez de quedarse sin contestar) cuando el handoff a APM falla', async () => {
     const store = new InMemoryStore();
