@@ -2,7 +2,9 @@ import { parseMetaAdLeadFormCandidates } from './meta-ad-lead-form.parser';
 
 describe('parseMetaAdLeadFormCandidates', () => {
   it('returns null for an organic message with no ad-form markers', () => {
-    expect(parseMetaAdLeadFormCandidates('Hola, quiero más información')).toBeNull();
+    expect(
+      parseMetaAdLeadFormCandidates('Hola, quiero más información'),
+    ).toBeNull();
   });
 
   it('extracts and sanitizes name, email and the first age found', () => {

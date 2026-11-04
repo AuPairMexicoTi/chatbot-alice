@@ -104,7 +104,10 @@ const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
 ];
 
 const sanitize = (value: string): string =>
-  SENSITIVE_PATTERNS.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), value);
+  SENSITIVE_PATTERNS.reduce(
+    (acc, [pattern, replacement]) => acc.replace(pattern, replacement),
+    value,
+  );
 
 const formatTimestamp = (epochMs: number): string => {
   const date = new Date(epochMs);
@@ -157,7 +160,9 @@ export class LogsService {
     const entries = files
       .flatMap((file) => this.parseLogFile(file))
       .filter((entry) => this.matchesFilters(entry, filters))
-      .sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0));
+      .sort((a, b) =>
+        a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0,
+      );
 
     const totalEvents = entries.length;
     const rows = filters.group ? this.groupEntries(entries) : entries;
@@ -227,7 +232,9 @@ export class LogsService {
 
       let parsed: Record<string, unknown>;
       try {
-        parsed = JSON.parse(trimmed);
+        const value: unknown = JSON.parse(trimmed);
+        if (!isRecord(value)) continue;
+        parsed = value;
       } catch {
         continue;
       }
@@ -235,14 +242,21 @@ export class LogsService {
       const levelNumber = typeof parsed.level === 'number' ? parsed.level : 30;
       const levelName = PINO_LEVEL_TO_NAME[levelNumber] ?? 'info';
       const time = typeof parsed.time === 'number' ? parsed.time : Date.now();
-      const moduleName = typeof parsed.context === 'string' ? parsed.context : null;
-      const message = sanitize(typeof parsed.msg === 'string' ? parsed.msg : '');
+      const moduleName =
+        typeof parsed.context === 'string' ? parsed.context : null;
+      const message = sanitize(
+        typeof parsed.msg === 'string' ? parsed.msg : '',
+      );
       const details = sanitize(JSON.stringify(parsed, null, 2));
       const timestamp = formatTimestamp(time);
       const context = this.buildContext(parsed);
 
       entries.push({
-        id: createHash('sha1').update(`${timestamp}|${levelName}|${message}|${details.slice(0, 120)}`).digest('hex'),
+        id: createHash('sha1')
+          .update(
+            `${timestamp}|${levelName}|${message}|${details.slice(0, 120)}`,
+          )
+          .digest('hex'),
         timestamp,
         level: levelName,
         channel: this.channel,
@@ -271,13 +285,14 @@ export class LogsService {
 
     const req = isRecord(parsed.req) ? parsed.req : null;
     if (req) {
-      if (typeof req.id !== 'undefined') context.request_id = String(req.id);
+      if (typeof req.id === 'string' || typeof req.id === 'number')
+        context.request_id = String(req.id);
       if (typeof req.method === 'string') context.method = req.method;
       if (typeof req.url === 'string') context.route = req.url;
       if (typeof req.remoteAddress === 'string') context.ip = req.remoteAddress;
       const headers = isRecord(req.headers) ? req.headers : null;
       if (headers && typeof headers['user-agent'] === 'string') {
-        context.user_agent = headers['user-agent'] as string;
+        context.user_agent = headers['user-agent'];
       }
     }
 
@@ -286,7 +301,8 @@ export class LogsService {
       context.exception = {
         class: typeof err.type === 'string' ? err.type : 'Error',
         message: typeof err.message === 'string' ? err.message : undefined,
-        trace: typeof err.stack === 'string' ? err.stack.split('\n') : undefined,
+        trace:
+          typeof err.stack === 'string' ? err.stack.split('\n') : undefined,
       };
     }
 
@@ -320,12 +336,19 @@ export class LogsService {
   // en una sola fila -- mismo criterio que buildSignature() en
   // ItLogService.php (clase+ubicacion de la excepcion, o el mensaje con
   // los numeros reemplazados cuando no hay excepcion).
-  private buildSignature(level: string, moduleName: string | null, message: string, context: LogContext): string {
+  private buildSignature(
+    level: string,
+    moduleName: string | null,
+    message: string,
+    context: LogContext,
+  ): string {
     const what = context.exception
       ? `${context.exception.class}:${context.exception.message ?? ''}`
       : message.replace(/\d+/g, '#');
 
-    return createHash('sha1').update(`${level}|${moduleName ?? ''}|${what}|${context.route ?? ''}`).digest('hex');
+    return createHash('sha1')
+      .update(`${level}|${moduleName ?? ''}|${what}|${context.route ?? ''}`)
+      .digest('hex');
   }
 
   private groupEntries(entries: LogEntry[]): LogEntry[] {
@@ -359,10 +382,13 @@ export class LogsService {
     if (filters.level && entry.level !== filters.level) return false;
     if (filters.onlyErrors && !ERROR_LEVELS.has(entry.level)) return false;
 
-    if (filters.dateFrom && entry.timestamp < `${filters.dateFrom} 00:00:00`) return false;
-    if (filters.dateTo && entry.timestamp > `${filters.dateTo} 23:59:59`) return false;
+    if (filters.dateFrom && entry.timestamp < `${filters.dateFrom} 00:00:00`)
+      return false;
+    if (filters.dateTo && entry.timestamp > `${filters.dateTo} 23:59:59`)
+      return false;
 
-    if (filters.requestId && entry.context.request_id !== filters.requestId) return false;
+    if (filters.requestId && entry.context.request_id !== filters.requestId)
+      return false;
 
     if (filters.user) {
       const haystack = [entry.context.ip ?? ''].join(' ').toLowerCase();
@@ -372,12 +398,20 @@ export class LogsService {
     if (filters.lead && filters.lead !== entry.context.lead_id) return false;
 
     if (filters.route) {
-      const haystack = [entry.context.route ?? '', entry.context.method ?? ''].join(' ').toLowerCase();
+      const haystack = [entry.context.route ?? '', entry.context.method ?? '']
+        .join(' ')
+        .toLowerCase();
       if (!haystack.includes(filters.route)) return false;
     }
 
     if (filters.search) {
-      const haystack = [entry.message, entry.details, entry.module ?? '', entry.channel, entry.source_file]
+      const haystack = [
+        entry.message,
+        entry.details,
+        entry.module ?? '',
+        entry.channel,
+        entry.source_file,
+      ]
         .join(' ')
         .toLowerCase();
       if (!haystack.includes(filters.search)) return false;
