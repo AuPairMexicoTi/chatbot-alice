@@ -1,0 +1,38 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "2475952259558199",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "phone_number_id": "1277327115473153",
+              "display_phone_number": "5215552757011"
+            },
+            "statuses": [
+              {
+                "id": "wamid.TEST-STATUS-1",
+                "status": "failed",
+                "timestamp": "1793901070",
+                "recipient_id": "5217771932360",
+                "errors": [
+                  {
+                    "code": 131042,
+                    "title": "Business eligibility payment issue",
+                    "message": "Business eligibility payment issue",
+                    "error_data": {
+                      "details": "Message failed to send because your WhatsApp Business account has unsettled payments."
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

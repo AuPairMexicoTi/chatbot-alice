@@ -49,16 +49,44 @@ export class PrismaMessageRepository implements MessageRepository {
     return record ? PrismaMessageMapper.toDomain(record) : null;
   }
 
+  async findByProviderMessageId(
+    providerMessageId: string,
+  ): Promise<Message | null> {
+    const record = await this.prisma.message.findFirst({
+      where: { providerMessageId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return record ? PrismaMessageMapper.toDomain(record) : null;
+  }
+
   async updateStatus(
     id: string,
     status: MessageStatus,
     providerMessageId?: string,
+    metadataPatch?: Record<string, string | number | boolean | null>,
   ): Promise<Message> {
+    // Json no soporta merge parcial en una sola escritura -- se lee el
+    // metadata actual para no perder lo que ya traia (ej. responseSource)
+    // al agregarle el motivo del rechazo.
+    const metadata:
+      Record<string, string | number | boolean | null> | undefined =
+      metadataPatch
+        ? {
+            ...((
+              await this.prisma.message.findUniqueOrThrow({
+                where: { id },
+              })
+            ).metadata as Record<string, string | number | boolean | null>),
+            ...metadataPatch,
+          }
+        : undefined;
+
     const record = await this.prisma.message.update({
       where: { id },
       data: {
         status,
         ...(providerMessageId === undefined ? {} : { providerMessageId }),
+        ...(metadata === undefined ? {} : { metadata }),
       },
     });
     return PrismaMessageMapper.toDomain(record);

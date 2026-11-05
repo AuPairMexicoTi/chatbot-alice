@@ -31,6 +31,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     text,
     locale: 'es-MX',
     payload: {},
+    statusUpdate: null,
   });
 
   it('starts the Au Pair flow before invoking the AI fallback', async () => {
@@ -75,6 +76,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       text: 'Hola ALICE',
       locale: 'es-MX',
       payload: {},
+      statusUpdate: null,
     });
 
     expect(store.messages.size).toBe(2);
@@ -188,6 +190,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       text: 'Quiero saber su horario',
       locale: 'es-MX',
       payload: {},
+      statusUpdate: null,
     });
 
     expect(store.aiRuns.size).toBe(0);
@@ -257,6 +260,7 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
       text: 'Hola',
       locale: 'es-MX',
       payload: {},
+      statusUpdate: null,
     });
 
     const outbound = [...store.messages.values()].find(

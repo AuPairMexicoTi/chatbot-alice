@@ -3,6 +3,13 @@ import { createHash } from 'node:crypto';
 import { JsonValue } from '@shared/domain/types/json.type';
 import type { FlowInput } from '@modules/conversation-flow/domain/conversation-flow.types';
 
+export interface ParsedWhatsAppStatusUpdate {
+  providerMessageId: string;
+  status: string;
+  errorCode: number | null;
+  errorTitle: string | null;
+}
+
 export interface ParsedWhatsAppWebhook {
   externalId: string;
   eventType: string;
@@ -14,6 +21,10 @@ export interface ParsedWhatsAppWebhook {
   text: string | null;
   locale: string;
   payload: JsonValue;
+  // Callback asincrono de Meta (sent/delivered/read/failed) para un mensaje
+  // saliente ya enviado -- no es un mensaje nuevo de la candidata, asi que
+  // no trae contacto/texto. Ver receive-whatsapp-webhook.use-case.ts.
+  statusUpdate: ParsedWhatsAppStatusUpdate | null;
 }
 
 @Injectable()
@@ -22,14 +33,32 @@ export class WhatsAppWebhookParser {
     const value = this.getFirstChangeValue(payload);
     const contact = value?.contacts?.[0];
     const message = value?.messages?.[0];
+    const status = message ? undefined : value?.statuses?.[0];
 
+    const statusUpdate: ParsedWhatsAppStatusUpdate | null =
+      status?.id && status?.status
+        ? {
+            providerMessageId: status.id,
+            status: status.status,
+            errorCode: status.errors?.[0]?.code ?? null,
+            errorTitle: status.errors?.[0]?.title ?? null,
+          }
+        : null;
+
+    // El mismo wamid pasa por varios estatus (sent -> delivered -> read, o
+    // sent -> failed) a lo largo del tiempo -- sin el estatus y el timestamp
+    // en el externalId, el segundo callback se tomaria como un duplicado del
+    // primero y nunca se procesaria (ver findByExternalId en
+    // receive-whatsapp-webhook.use-case.ts).
     const externalId =
       message?.id ??
-      createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+      (statusUpdate
+        ? `${statusUpdate.providerMessageId}:${statusUpdate.status}:${status?.timestamp ?? ''}`
+        : createHash('sha256').update(JSON.stringify(payload)).digest('hex'));
 
     return {
       externalId,
-      eventType: message?.type ?? 'unknown',
+      eventType: statusUpdate ? 'status' : (message?.type ?? 'unknown'),
       contactExternalId: contact?.wa_id ?? message?.from ?? null,
       contactName: contact?.profile?.name ?? null,
       from: message?.from ?? null,
@@ -38,6 +67,7 @@ export class WhatsAppWebhookParser {
       text: message?.text?.body ?? null,
       locale: 'es-MX',
       payload,
+      statusUpdate,
     };
   }
 
@@ -63,6 +93,12 @@ export class WhatsAppWebhookParser {
           from?: string;
           type?: string;
           text?: { body?: string };
+        }>;
+        statuses?: Array<{
+          id?: string;
+          status?: string;
+          timestamp?: string;
+          errors?: Array<{ code?: number; title?: string }>;
         }>;
       }
     | undefined {

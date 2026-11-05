@@ -22,10 +22,12 @@ export interface MessageRepository {
     limit: number,
   ): Promise<Message[]>;
   findById(id: string): Promise<Message | null>;
+  findByProviderMessageId(providerMessageId: string): Promise<Message | null>;
   updateStatus(
     id: string,
     status: MessageStatus,
     providerMessageId?: string,
+    metadataPatch?: Record<string, string | number | boolean | null>,
   ): Promise<Message>;
 }
 

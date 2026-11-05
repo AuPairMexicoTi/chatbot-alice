@@ -40,10 +40,20 @@ export class InMemoryMessageRepository implements MessageRepository {
     return this.store.messages.get(id) ?? null;
   }
 
+  async findByProviderMessageId(
+    providerMessageId: string,
+  ): Promise<Message | null> {
+    const matches = [...this.store.messages.values()]
+      .filter((message) => message.providerMessageId === providerMessageId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return matches[0] ?? null;
+  }
+
   async updateStatus(
     id: string,
     status: MessageStatus,
     providerMessageId?: string,
+    metadataPatch?: Record<string, string | number | boolean | null>,
   ): Promise<Message> {
     const message = this.store.messages.get(id);
     if (!message) {
@@ -54,6 +64,9 @@ export class InMemoryMessageRepository implements MessageRepository {
       ...message,
       status,
       providerMessageId: providerMessageId ?? message.providerMessageId,
+      metadata: metadataPatch
+        ? { ...message.metadata, ...metadataPatch }
+        : message.metadata,
       updatedAt: new Date(),
     };
     this.store.messages.set(id, updated);
