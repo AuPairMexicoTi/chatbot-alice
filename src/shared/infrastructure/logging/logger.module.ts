@@ -15,6 +15,19 @@ import { stdSerializers } from 'pino';
         return {
           pinoHttp: {
             level,
+            // Una peticion exitosa (2xx/3xx) no aporta nada operativo por si
+            // sola -- el healthcheck de Docker a /health/live cada 30s (ver
+            // compose.production.yml) y cada webhook de estatus de Meta
+            // inundaban el log de lineas "request completed" sin ninguna
+            // decision ni error que mostrar. Baja a 'debug' (no se escribe
+            // con el nivel 'info' por defecto, pero sigue disponible subiendo
+            // LOG_LEVEL si hace falta depurar en vivo); un 4xx/5xx o error de
+            // conexion si se queda visible, porque eso si es una señal real.
+            customLogLevel: (_req, res, err) => {
+              if (err || res.statusCode >= 500) return 'error';
+              if (res.statusCode >= 400) return 'warn';
+              return 'debug';
+            },
             // Ademas de stdout (lo que ya se ve con `docker logs`, sin
             // cambios), se escribe el mismo log en NDJSON a un archivo --
             // es lo que lee la vista de monitoreo de logs de IT

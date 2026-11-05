@@ -24,7 +24,10 @@ export class WhatsAppInboundProcessor extends WorkerHost {
   async process(
     job: Job<{ webhookEventId: string; externalId: string }>,
   ): Promise<void> {
-    this.logger.log(`Procesando evento inbound ${job.data.externalId}`);
+    // Solo marca el inicio/fin del job -- util al depurar en vivo
+    // (LOG_LEVEL=debug), pero sin señal propia para monitoreo normal; lo que
+    // SI importa (la falla) ya se loguea aparte en el catch, a nivel error.
+    this.logger.debug(`Procesando evento inbound ${job.data.externalId}`);
     const webhookEvent = await this.webhookEventRepository.findById(
       job.data.webhookEventId,
     );
@@ -46,7 +49,7 @@ export class WhatsAppInboundProcessor extends WorkerHost {
         webhookEvent.id,
         'PROCESSED',
       );
-      this.logger.log(`Evento inbound procesado ${job.data.externalId}`);
+      this.logger.debug(`Evento inbound procesado ${job.data.externalId}`);
     } catch (error) {
       await this.webhookEventRepository.updateStatus(webhookEvent.id, 'FAILED');
       this.logger.error({
