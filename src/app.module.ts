@@ -18,6 +18,7 @@ import { WebhooksModule } from '@modules/webhooks/webhooks.module';
 import { ConversationFlowModule } from '@modules/conversation-flow/conversation-flow.module';
 import { ConversationsAdminModule } from '@modules/conversations-admin/conversations-admin.module';
 import { LogsModule } from '@modules/logs/logs.module';
+import { DataRetentionModule } from '@modules/data-retention/data-retention.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LogsModule } from '@modules/logs/logs.module';
     ConversationFlowModule,
     ConversationsAdminModule,
     LogsModule,
+    DataRetentionModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

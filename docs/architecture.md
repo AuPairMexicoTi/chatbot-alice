@@ -36,6 +36,7 @@ POST event -> raw body + firma -> persistencia -> cola inbound -> procesamiento
 - Prisma para tablas `alc_*`.
 - Redis para colas inbound/outbound.
 - Idempotencia por `external_id` de webhook.
+- Retención: un job diario de BullMQ borra webhooks y conversaciones inactivas (ver [ADR 0005](adr/0005-data-retention.md)).
 
 ## Seguridad
 
