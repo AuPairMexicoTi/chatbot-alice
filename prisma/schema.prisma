@@ -92,6 +92,7 @@ model Conversation {
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
   @@index([contactId, status], map: "idx_alc_conversations_contact_status")
+  @@index([updatedAt], map: "idx_alc_conversations_updated_at")
   @@map("alc_conversations")
 }
 

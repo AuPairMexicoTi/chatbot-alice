@@ -6,6 +6,7 @@ import { crmConfig } from './crm.config';
 import { conversationFlowConfig } from './conversation-flow.config';
 import { mediaConfig } from './media.config';
 import { databaseConfig } from './database.config';
+import { dataRetentionConfig } from './data-retention.config';
 import { envValidationSchema } from './env.validation';
 import { redisConfig } from './redis.config';
 import { whatsappConfig } from './whatsapp.config';
@@ -32,6 +33,7 @@ const createEnvFilePaths = (nodeEnv: string): string[] => [
         crmConfig,
         conversationFlowConfig,
         mediaConfig,
+        dataRetentionConfig,
       ],
       validationSchema: envValidationSchema,
     }),

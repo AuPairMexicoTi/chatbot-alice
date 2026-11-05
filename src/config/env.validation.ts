@@ -84,4 +84,9 @@ export const envValidationSchema = Joi.object({
   CRM_WEBHOOK_SECRET: Joi.string().allow('').required(),
   CRM_ALICE_HANDOFFS_URL: Joi.string().uri().allow('').required(),
   CRM_ALICE_INTEGRATION_SECRET: Joi.string().allow('').required(),
+  RETENTION_ENABLED: Joi.boolean().default(false),
+  RETENTION_DRY_RUN: Joi.boolean().default(true),
+  RETENTION_CONVERSATION_MONTHS: Joi.number().integer().min(1).default(6),
+  RETENTION_WEBHOOK_DAYS: Joi.number().integer().min(1).default(30),
+  RETENTION_BATCH_SIZE: Joi.number().integer().min(1).default(200),
 }).unknown(true);

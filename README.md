@@ -77,6 +77,14 @@ WhatsApp images (optional legacy assets):
 - Image files live in `public/images`. Meta must be able to reach the configured URL without authentication.
 - If APM has not yet saved flow nodes, ALICE uses its built-in flow and its public image URLs as a safe fallback. Once a node is saved from APM, that node's text and image take precedence; a removed image stays removed.
 
+Data retention (see [ADR 0005](docs/adr/0005-data-retention.md)):
+
+- A daily BullMQ job at 3 a.m. Mexico City time deletes webhook events older than `RETENTION_WEBHOOK_DAYS` and conversations with no activity for `RETENTION_CONVERSATION_MONTHS`, including their messages. A contact is deleted with its last conversation. **Deletion cannot be undone.**
+- `RETENTION_ENABLED=false` by default: nothing runs and any previous schedule is removed at startup.
+- `RETENTION_DRY_RUN=true` by default: the job only logs what it would delete. Set it to `false` to purge, after taking a database backup.
+- `RETENTION_BATCH_SIZE` sets the rows per transaction.
+- Purging does not shrink the disk: PostgreSQL reuses the freed space. Reclaiming it requires `VACUUM FULL`, which locks the table.
+
 CRM welcome templates:
 
 - Set `WHATSAPP_WELCOME_TEMPLATE_NAME` to an approved Meta template name (for example, `bienvenida_registro`) and `WHATSAPP_WELCOME_TEMPLATE_LANGUAGE=es_MX`.
