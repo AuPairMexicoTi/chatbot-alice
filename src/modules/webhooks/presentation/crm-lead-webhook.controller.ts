@@ -16,12 +16,16 @@ export class CrmLeadWebhookController {
   @UseGuards(CrmSecretGuard)
   async welcomeMessage(
     @Body() body: SendWelcomeMessageDto,
-  ): Promise<{ received: true; message_id: string }> {
+  ): Promise<{ received: true; message_id: string; already_sent: boolean }> {
     const result = await this.sendWelcomeMessageUseCase.execute({
       phoneNumber: body.phone,
       name: body.name,
     });
 
-    return { received: true, message_id: result.messageId };
+    return {
+      received: true,
+      message_id: result.messageId,
+      already_sent: result.alreadySent,
+    };
   }
 }
