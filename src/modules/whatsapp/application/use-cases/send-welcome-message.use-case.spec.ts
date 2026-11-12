@@ -147,6 +147,49 @@ describe('SendWelcomeMessageUseCase', () => {
     expect(message?.metadata.templateBodyParameter).toBeUndefined();
   });
 
+  it('does not send a second welcome when one already exists for the conversation', async () => {
+    // APM dispara este webhook por lead desde un observer sin bloqueo de fila
+    // -- en produccion esto duplico la bienvenida en ~77% de las
+    // conversaciones (casi siempre dentro de los primeros 10s). Este es el
+    // escenario real: dos llamadas practicamente seguidas para el mismo
+    // telefono.
+    const { useCase, messageRepository, queueAdapter, autoReplyRepository } =
+      buildUseCase();
+
+    await autoReplyRepository.create({
+      key: WELCOME_AUTO_REPLY_KEY,
+      title: 'Bienvenida Zapier',
+      matchType: 'EXACT',
+      patterns: [],
+      responseText: 'Hola {{name}}, bienvenida a Au Pair Mexico.',
+      responseImageUrl: null,
+      priority: 0,
+      isActive: true,
+      locale: 'es-MX',
+    });
+
+    const first = await useCase.execute({
+      phoneNumber: '5215500000004',
+      name: 'Ana',
+    });
+    const second = await useCase.execute({
+      phoneNumber: '5215500000004',
+      name: 'Ana',
+    });
+
+    expect(first.alreadySent).toBe(false);
+    expect(second.alreadySent).toBe(true);
+    expect(second.messageId).toBe(first.messageId);
+    expect(queueAdapter.outboundJobs).toHaveLength(1);
+
+    const conversation = await messageRepository.findById(first.messageId);
+    const allMessages = await messageRepository.listRecentByConversationId(
+      conversation!.conversationId,
+      10,
+    );
+    expect(allMessages).toHaveLength(1);
+  });
+
   it('ignores an inactive template and throws', async () => {
     const { useCase, autoReplyRepository } = buildUseCase();
 

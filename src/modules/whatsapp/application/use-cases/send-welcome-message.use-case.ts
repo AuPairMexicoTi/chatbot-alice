@@ -22,6 +22,11 @@ import { normalizeWhatsAppContactId } from '../../domain/whatsapp-phone';
 
 export const WELCOME_AUTO_REPLY_KEY = 'welcome_zapier_lead';
 
+const WELCOME_RESPONSE_SOURCES = new Set([
+  'CRM_WELCOME_TEMPLATE',
+  'CRM_WELCOME',
+]);
+
 export interface SendWelcomeMessageInput {
   phoneNumber: string;
   name: string | null;
@@ -29,6 +34,7 @@ export interface SendWelcomeMessageInput {
 
 export interface SendWelcomeMessageResult {
   messageId: string;
+  alreadySent: boolean;
 }
 
 @Injectable()
@@ -80,6 +86,30 @@ export class SendWelcomeMessageUseCase {
         template.locale ?? 'es-MX',
       );
 
+    // APM dispara este webhook por lead desde un observer de Eloquent que no
+    // es atomico (ver AliceWelcomeMessageNotifier::notifyNewLead en
+    // Checkout-Backend-APM) -- en produccion esto hizo que ~77% de las
+    // conversaciones recibieran la bienvenida duplicada, casi siempre en
+    // menos de 10s. Esto no corrige la causa del lado de APM (eso se arregla
+    // ahi con un lock de fila), pero evita el sintoma visible sin importar
+    // cuantas veces nos llamen por el mismo lead.
+    const existingWelcome = (
+      await this.messageRepository.listRecentByConversationId(
+        conversation.id,
+        10,
+      )
+    ).find(
+      (existing) =>
+        existing.direction === 'OUTBOUND' &&
+        WELCOME_RESPONSE_SOURCES.has(
+          String(existing.metadata.responseSource ?? ''),
+        ),
+    );
+
+    if (existingWelcome) {
+      return { messageId: existingWelcome.id, alreadySent: true };
+    }
+
     const message = await this.messageRepository.create({
       conversationId: conversation.id,
       direction: 'OUTBOUND',
@@ -114,7 +144,7 @@ export class SendWelcomeMessageUseCase {
 
     await this.queueOutboundMessageUseCase.execute(message.id);
 
-    return { messageId: message.id };
+    return { messageId: message.id, alreadySent: false };
   }
 
   private applyTemplate(text: string, name: string | null): string {
