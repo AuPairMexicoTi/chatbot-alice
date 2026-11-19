@@ -77,7 +77,11 @@ describe('ConversationFlowStateService', () => {
     expect(result.messages[0]).not.toContain('bienvenida');
   });
 
-  it('restarts a finished flow when the candidate sends another message', async () => {
+  it('does not restart to the main menu while awaiting a human advisor', async () => {
+    // Bug real en produccion: una candidata ya transferida a un asesor
+    // (AWAITING_HUMAN = "Esperando asesor") escribia cualquier cosa y Alice
+    // reiniciaba al menu principal como si no tuviera asesor asignado. Ver
+    // ConversationFlowEngine.advanceWhileAwaitingAdvisor.
     const repository = repositoryWith({
       state: {
         nodeId: 'human-handoff',
@@ -95,9 +99,10 @@ describe('ConversationFlowStateService', () => {
 
     const result = await service.advance('conversation-1', textInput);
 
-    expect(result.state.nodeId).toBe('main-menu');
-    expect(result.state.status).toBe('ACTIVE');
-    expect(result.messages[0]).toContain('bienvenida');
+    expect(result.state.nodeId).toBe('human-handoff');
+    expect(result.state.status).toBe('AWAITING_HUMAN');
+    expect(result.messages[0]).not.toContain('bienvenida');
+    expect(result.messages[0]).not.toContain('No entendí');
   });
 
   it('restarts when the stored node id no longer exists in the definition', async () => {

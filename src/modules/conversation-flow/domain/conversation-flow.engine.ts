@@ -5,6 +5,16 @@ import {
   FlowState,
 } from './conversation-flow.types';
 import { MetaAdLeadFormCandidates } from './meta-ad-lead-form.parser';
+import { classifyCourtesyIntent } from './courtesy-intent.classifier';
+
+const COURTESY_THANKS_REPLY = '¡Con gusto! 💖 Tu asesor te atenderá pronto.';
+const COURTESY_CONFIRMATION_REPLY =
+  '¡Perfecto! Cualquier duda, tu asesor te ayudará con gusto. 💖';
+const WAITING_ESCALATION_NOTICE =
+  'Dejaré que tu asesor te responda directamente, está por contactarte. ¡Gracias por tu paciencia! 💖';
+const FALLBACK_STREAK_VARIABLE = 'fallbackStreak';
+const NEEDS_REVIEW_VARIABLE = 'needsReview';
+const ADVISOR_WHATSAPP_LINK_VARIABLE = 'advisorWhatsAppLink';
 
 // Se usa para comparar contra las opciones del menu (y para validar
 // edad/respuestas genericas) -- sin quitar signos de puntuacion, "Que hace
@@ -71,6 +81,8 @@ export class ConversationFlowEngine {
     state: FlowState,
     input: FlowInput,
   ): FlowResult {
+    if (state.status === 'AWAITING_HUMAN')
+      return this.advanceWhileAwaitingAdvisor(state, input);
     if (state.status !== 'ACTIVE')
       return { state, messages: [], requestHandoff: false };
     if (input.messageType !== 'TEXT' || !input.text) {
@@ -131,6 +143,88 @@ export class ConversationFlowEngine {
     return this.reply(definition, { ...state, attempts }, [
       this.invalidReply(node.id),
     ]);
+  }
+
+  // La candidata ya tiene un asesor asignado (status AWAITING_HUMAN) -- no
+  // se vuelve a mostrar el menu principal (ver conversation-flow-state.service.ts,
+  // shouldRestart). Cortesia/confirmacion se responde corto; cualquier otra
+  // cosa recibe el mensaje de espera, con un limite anti-bucle de 2
+  // fallbacks seguidos antes de quedarse en silencio.
+  private advanceWhileAwaitingAdvisor(
+    state: FlowState,
+    input: FlowInput,
+  ): FlowResult {
+    if (input.messageType !== 'TEXT' || !input.text)
+      return { state, messages: [], requestHandoff: false };
+
+    const intent = classifyCourtesyIntent(input.text);
+    if (intent === 'THANKS')
+      return {
+        state: this.clearFallbackStreak(state),
+        messages: [COURTESY_THANKS_REPLY],
+        requestHandoff: false,
+      };
+    if (intent === 'CONFIRMATION')
+      return {
+        state: this.clearFallbackStreak(state),
+        messages: [COURTESY_CONFIRMATION_REPLY],
+        requestHandoff: false,
+      };
+
+    const fallbackStreak =
+      Number(state.variables[FALLBACK_STREAK_VARIABLE] ?? '0') + 1;
+    const nextVariables = {
+      ...state.variables,
+      [FALLBACK_STREAK_VARIABLE]: String(fallbackStreak),
+    };
+
+    if (fallbackStreak >= 3)
+      return {
+        state: {
+          ...state,
+          variables: { ...nextVariables, [NEEDS_REVIEW_VARIABLE]: 'true' },
+        },
+        messages: [],
+        requestHandoff: false,
+      };
+
+    if (fallbackStreak === 2)
+      return {
+        state: {
+          ...state,
+          variables: { ...nextVariables, [NEEDS_REVIEW_VARIABLE]: 'true' },
+        },
+        messages: [WAITING_ESCALATION_NOTICE],
+        requestHandoff: false,
+      };
+
+    return {
+      state: { ...state, variables: nextVariables },
+      messages: [this.waitingForAdvisorMessage(state.variables)],
+      requestHandoff: false,
+    };
+  }
+
+  private waitingForAdvisorMessage(variables: Record<string, string>): string {
+    const link = variables[ADVISOR_WHATSAPP_LINK_VARIABLE];
+    return link
+      ? `Tu asesor ya está al tanto y puede ayudarte mejor por aquí. Escríbele directamente: 👉 ${link} 💖`
+      : 'Tu asesor ya está al tanto de tu caso y se pondrá en contacto contigo muy pronto. 💖';
+  }
+
+  private clearFallbackStreak(state: FlowState): FlowState {
+    if (
+      !(FALLBACK_STREAK_VARIABLE in state.variables) &&
+      !(NEEDS_REVIEW_VARIABLE in state.variables)
+    )
+      return state;
+    const rest = Object.fromEntries(
+      Object.entries(state.variables).filter(
+        ([key]) =>
+          key !== FALLBACK_STREAK_VARIABLE && key !== NEEDS_REVIEW_VARIABLE,
+      ),
+    );
+    return { ...state, variables: rest };
   }
 
   private capture(

@@ -9,7 +9,11 @@ import {
 } from './ports/flow-definition.repository';
 import { ConversationFlowEngine } from '../domain/conversation-flow.engine';
 import { aupairFlowDefinition } from '../domain/aupair-flow.definition';
-import { FlowInput, FlowResult } from '../domain/conversation-flow.types';
+import {
+  FlowInput,
+  FlowResult,
+  FlowState,
+} from '../domain/conversation-flow.types';
 import { parseMetaAdLeadFormCandidates } from '../domain/meta-ad-lead-form.parser';
 import { InMemoryConversationFlowStateRepository } from '../infrastructure/repositories/in-memory-conversation-flow-state.repository';
 
@@ -54,12 +58,19 @@ export class ConversationFlowStateService {
     // (ver aupair-flow.definition.ts) -- sin este chequeo, una conversacion
     // ACTIVE parada en un nodo borrado haria crashear advance() al buscarlo.
     // Se trata igual que cualquier otra razon para reiniciar al menu.
+    //
+    // AWAITING_HUMAN (= "Esperando asesor") NO reinicia: antes, cualquier
+    // mensaje de una candidata ya transferida volvia a mostrar el menu
+    // principal como si no tuviera asesor asignado (bug real en produccion
+    // -- ver ConversationFlowEngine.advanceWhileAwaitingAdvisor). Solo CLOSED
+    // (cierre explicito o por inactividad) debe reiniciar al menu.
     const shouldRestart =
       !record ||
-      record.state.status !== 'ACTIVE' ||
+      record.state.status === 'CLOSED' ||
       !definition.nodes[record.state.nodeId] ||
-      this.now().getTime() - record.updatedAt.getTime() >=
-        this.inactivityTimeoutMs;
+      (record.state.status === 'ACTIVE' &&
+        this.now().getTime() - record.updatedAt.getTime() >=
+          this.inactivityTimeoutMs);
     // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
     // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
     // toda la bienvenida; un saludo explícito continúa mostrando el menú.
@@ -89,6 +100,30 @@ export class ConversationFlowStateService {
       adLeadResult ?? this.engine.advance(definition, currentState, input);
     await this.repository.save(conversationId, result.state);
     return result;
+  }
+
+  // Se llama tras un handoff a APM exitoso para que el link de WhatsApp del
+  // asesor quede disponible en variables -- sin esto, el mensaje de espera
+  // de advanceWhileAwaitingAdvisor() no podria ofrecer un contacto directo
+  // en los fallbacks posteriores (el resultado del handoff solo existe en
+  // ese momento, no se vuelve a pedir a APM en cada mensaje).
+  async recordAdvisorContact(
+    conversationId: string,
+    state: FlowState,
+    advisor: { whatsappLink?: string | null; name?: string | null },
+  ): Promise<FlowState> {
+    const nextState: FlowState = {
+      ...state,
+      variables: {
+        ...state.variables,
+        ...(advisor.whatsappLink
+          ? { advisorWhatsAppLink: advisor.whatsappLink }
+          : {}),
+        ...(advisor.name ? { advisorName: advisor.name } : {}),
+      },
+    };
+    await this.repository.save(conversationId, nextState);
+    return nextState;
   }
 
   // Red de seguridad para cuando el handoff a APM falla (ver

@@ -101,6 +101,16 @@ export class ProcessInboundWhatsAppMessageUseCase {
           });
           flowResult.messages = [this.advisorMessage(handoffResult)];
           handoffSucceeded = true;
+          // El link de WhatsApp del asesor solo se conoce en este momento --
+          // se persiste en el estado del flujo para que los fallbacks
+          // posteriores (ver ConversationFlowEngine.advanceWhileAwaitingAdvisor)
+          // puedan ofrecerlo sin volver a pedirlo a APM.
+          flowResult.state =
+            await this.conversationFlowStateService.recordAdvisorContact(
+              conversation.id,
+              flowResult.state,
+              handoffResult.advisor,
+            );
         } catch (error) {
           // El handoff a APM falla, por ejemplo, cuando el lead escribe
           // "asesor" antes de que exista su registro en APM (eso recien se

@@ -1,6 +1,6 @@
 import { aupairFlowDefinition } from './aupair-flow.definition';
 import { ConversationFlowEngine } from './conversation-flow.engine';
-import { FlowDefinition } from './conversation-flow.types';
+import { FlowDefinition, FlowState } from './conversation-flow.types';
 
 describe('ConversationFlowEngine', () => {
   const engine = new ConversationFlowEngine();
@@ -55,6 +55,131 @@ describe('ConversationFlowEngine', () => {
     expect(result.state.nodeId).toBe('human-handoff');
     expect(result.state.status).toBe('AWAITING_HUMAN');
     expect(result.requestHandoff).toBe(true);
+  });
+
+  // Bug real en produccion (Aneth Cárdenas, "Esperando asesor"): tras el
+  // handoff, cualquier respuesta de cortesia o confirmacion caia en el
+  // fallback del menu principal ("No entendí tu respuesta..."), en bucle.
+  describe('while awaiting a human advisor (AWAITING_HUMAN)', () => {
+    const awaitingState = {
+      ...engine.start(aupairFlowDefinition).state,
+      nodeId: 'human-handoff',
+      status: 'AWAITING_HUMAN' as const,
+    };
+
+    it.each([
+      'Perfecto muchas gracias',
+      'Ya le mandé mensaje a mi asesor',
+      'GRACIAS!!!',
+      'muchas gracias ✨',
+      'perfecto, gracias',
+      'Excelente, gracias!',
+      'Ok gracias',
+      'listo, gracias 🙏',
+      'de acuerdo, muchas gracias',
+      'Vale, gracias',
+      'super, gracias',
+      '👍',
+    ])(
+      'replies with a short closing message for "%s" instead of the menu fallback',
+      (courtesyMessage) => {
+        const result = engine.advance(
+          aupairFlowDefinition,
+          awaitingState,
+          text(courtesyMessage),
+        );
+
+        expect(result.state.nodeId).toBe('human-handoff');
+        expect(result.state.status).toBe('AWAITING_HUMAN');
+        expect(result.messages).toHaveLength(1);
+        expect(result.messages[0]).not.toContain('No entendí');
+        expect(result.messages[0]).not.toContain('bienvenida');
+      },
+    );
+
+    it('answers a generic fallback message without a menu when no intent matches', () => {
+      const result = engine.advance(
+        aupairFlowDefinition,
+        awaitingState,
+        text('nos vemos'),
+      );
+
+      expect(result.state.nodeId).toBe('human-handoff');
+      expect(result.state.variables.fallbackStreak).toBe('1');
+      expect(result.messages[0]).not.toContain('No entendí');
+      expect(result.messages[0]).toContain('Tu asesor ya está al tanto');
+    });
+
+    it('offers the advisor WhatsApp link in the fallback when it was recorded', () => {
+      const result = engine.advance(
+        aupairFlowDefinition,
+        {
+          ...awaitingState,
+          variables: { advisorWhatsAppLink: 'https://wa.me/5215512345678' },
+        },
+        text('nos vemos'),
+      );
+
+      expect(result.messages[0]).toContain('https://wa.me/5215512345678');
+    });
+
+    it('sends a one-time escalation notice and flags the conversation for review on the second consecutive fallback', () => {
+      const firstFallback = engine.advance(
+        aupairFlowDefinition,
+        awaitingState,
+        text('nos vemos'),
+      );
+      const secondFallback = engine.advance(
+        aupairFlowDefinition,
+        firstFallback.state,
+        text('ya veremos'),
+      );
+
+      expect(secondFallback.state.variables.fallbackStreak).toBe('2');
+      expect(secondFallback.state.variables.needsReview).toBe('true');
+      expect(secondFallback.messages).toHaveLength(1);
+      expect(secondFallback.messages[0]).not.toContain(
+        'Tu asesor ya está al tanto',
+      );
+    });
+
+    it('stops responding from the third consecutive fallback onward, keeping the review flag', () => {
+      let state: FlowState = awaitingState;
+      for (const message of ['uno', 'dos', 'tres']) {
+        state = engine.advance(
+          aupairFlowDefinition,
+          state,
+          text(message),
+        ).state;
+      }
+
+      const result = engine.advance(
+        aupairFlowDefinition,
+        state,
+        text('cuatro'),
+      );
+
+      expect(result.messages).toHaveLength(0);
+      expect(result.state.variables.needsReview).toBe('true');
+    });
+
+    it('resets the fallback streak after a courtesy reply', () => {
+      const afterFallback = engine.advance(
+        aupairFlowDefinition,
+        awaitingState,
+        text('nos vemos'),
+      );
+      expect(afterFallback.state.variables.fallbackStreak).toBe('1');
+
+      const afterThanks = engine.advance(
+        aupairFlowDefinition,
+        afterFallback.state,
+        text('gracias'),
+      );
+
+      expect(afterThanks.state.variables.fallbackStreak).toBeUndefined();
+      expect(afterThanks.state.variables.needsReview).toBeUndefined();
+    });
   });
 
   it.each([

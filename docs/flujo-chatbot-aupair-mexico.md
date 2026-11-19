@@ -21,8 +21,17 @@ MENÚ PRINCIPAL
 - Audio, imagen, ubicación, sticker o documento piden una respuesta de texto.
 - Tres respuestas no reconocidas consecutivas en un paso transfieren a un
   asesor humano.
-- Después de una transferencia o cierre, un mensaje posterior inicia el flujo
-  de nuevo.
+- Después de un cierre (`salir`/`cancelar` o inactividad), un mensaje
+  posterior inicia el flujo de nuevo desde el menú principal.
+- Después de una transferencia ("Esperando asesor" / `AWAITING_HUMAN`), un
+  mensaje posterior **ya no** reinicia el menú. ALICE detecta cortesía
+  ("gracias", "perfecto", "ok", 👍...) y confirmación de contacto ("ya le
+  escribí a mi asesor") y responde corto; cualquier otro mensaje recibe un
+  recordatorio de que el asesor ya está al tanto (con su liga de WhatsApp si
+  se conoce). Tras 2 fallbacks seguidos sin esas intenciones, ALICE avisa una
+  vez que dejará de insistir y marca la conversación para revisión humana
+  (visible en `variables.needsReview` vía el endpoint de flow-state de
+  `conversations-admin`); del tercer fallback en adelante guarda silencio.
 
 ## Contactar a mi asesor y transferencia
 
