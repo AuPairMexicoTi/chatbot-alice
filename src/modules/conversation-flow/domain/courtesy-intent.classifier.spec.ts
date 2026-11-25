@@ -50,6 +50,13 @@ describe('classifyCourtesyIntent', () => {
     'gracias, ¿cuándo es la entrevista?',
     'no ok',
     'no, gracias',
+    // Caso real reportado en la segunda vuelta de review: el filtro de
+    // pregunta/negacion solo se aplicaba a THANKS, no a CONFIRMATION -- la
+    // queja mas comun en "Esperando asesor" (el asesor no contesta) incluye
+    // casi siempre una de las frases de CONFIRMATION_PHRASES.
+    'ya le escribí a mi asesor pero no me contesta',
+    'ya le escribí a mi asesor, ¿cuándo me responde?',
+    'ya me contactó pero no me dio el precio',
   ])('does not classify "%s" as a courtesy intent', (text) => {
     expect(classifyCourtesyIntent(text)).toBeNull();
   });

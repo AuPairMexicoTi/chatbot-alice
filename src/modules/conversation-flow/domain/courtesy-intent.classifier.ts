@@ -83,19 +83,25 @@ const THANKS_PHRASES = [
   'buenisima',
 ];
 
-// "no esta bien", "ok y cuanto cuesta" o "gracias, cuando es la entrevista"
-// contienen una palabra de THANKS_PHRASES (esta bien/ok/gracias) pero no son
-// cortesia -- son una queja, una pregunta de precio y una pregunta con
-// agradecimiento de cortesia incidental. matchesAnyPhrase por si sola no
-// distingue esto porque busca la frase en cualquier parte del mensaje. Por
-// eso una frase de THANKS (a diferencia de CONFIRMATION, mas larga y
-// especifica, y que no presenta este problema en los casos reportados) solo
-// cuenta si, ademas: el mensaje no es una pregunta, no incluye una negacion,
-// y no le queda contenido real despues de quitarle todas las frases de
-// cortesia que reconoce (ver isPureThanksMessage).
+// "no esta bien", "ok y cuanto cuesta", "gracias, cuando es la entrevista",
+// "ya le escribi a mi asesor pero no me contesta" o "ya le escribi, cuando
+// me responde?" contienen una frase de CONFIRMATION_PHRASES o THANKS_PHRASES
+// pero no son cortesia -- son quejas y preguntas (la mas comun en esta
+// etapa: el asesor no contesta) con una frase de cortesia incidental.
+// matchesAnyPhrase por si sola no distingue esto porque busca la frase en
+// cualquier parte del mensaje, asi que ninguna de las dos cuenta si el
+// mensaje es una pregunta o incluye una negacion.
 const QUESTION_MARK_PATTERN = /[?¿]/u;
 const NEGATION_PATTERN = /\bno\b/u;
 
+const isAskingOrNegating = (raw: string, normalized: string): boolean =>
+  QUESTION_MARK_PATTERN.test(raw) || NEGATION_PATTERN.test(normalized);
+
+// Ademas, THANKS (a diferencia de CONFIRMATION, mas larga y especifica, y
+// cuyos casos reales siempre dejan un resto como "a mi asesor") solo cuenta
+// si no le queda contenido real despues de quitarle todas las frases de
+// cortesia que reconoce -- si no, "ok y cuanto cuesta" seguiria contando por
+// el simple "ok" inicial.
 const stripPhrases = (normalized: string, phrases: string[]): string => {
   // Mas largas primero: "gracias" es tambien el inicio de "muchas gracias"
   // -- quitarla primero deja "muchas" huerfano y sin la frase larga que lo
@@ -112,12 +118,6 @@ const stripPhrases = (normalized: string, phrases: string[]): string => {
   return result.replace(/\s+/g, ' ').trim();
 };
 
-const isPureThanksMessage = (raw: string, normalized: string): boolean => {
-  if (QUESTION_MARK_PATTERN.test(raw)) return false;
-  if (NEGATION_PATTERN.test(normalized)) return false;
-  return stripPhrases(normalized, THANKS_PHRASES) === '';
-};
-
 export type CourtesyIntent = 'THANKS' | 'CONFIRMATION' | null;
 
 export function classifyCourtesyIntent(text: string): CourtesyIntent {
@@ -125,11 +125,12 @@ export function classifyCourtesyIntent(text: string): CourtesyIntent {
 
   const normalized = normalizeForIntent(text);
   if (!normalized) return null;
+  if (isAskingOrNegating(text, normalized)) return null;
 
   if (matchesAnyPhrase(normalized, CONFIRMATION_PHRASES)) return 'CONFIRMATION';
   if (
     matchesAnyPhrase(normalized, THANKS_PHRASES) &&
-    isPureThanksMessage(text, normalized)
+    stripPhrases(normalized, THANKS_PHRASES) === ''
   )
     return 'THANKS';
   return null;
