@@ -163,6 +163,25 @@ describe('ConversationFlowEngine', () => {
       expect(result.state.variables.needsReview).toBe('true');
     });
 
+    it.each(['menu', 'Menú', 'inicio', 'Inicio'])(
+      'forces an immediate restart to the main menu on "%s" instead of waiting for the inactivity reset',
+      (command) => {
+        const result = engine.advance(
+          aupairFlowDefinition,
+          {
+            ...awaitingState,
+            variables: { fallbackStreak: '2', needsReview: 'true' },
+          },
+          text(command),
+        );
+
+        expect(result.state.status).toBe('ACTIVE');
+        expect(result.state.nodeId).toBe(aupairFlowDefinition.entryNodeId);
+        expect(result.state.variables).toEqual({});
+        expect(result.messages[0]).toContain('bienvenida');
+      },
+    );
+
     it('resets the fallback streak after a courtesy reply', () => {
       const afterFallback = engine.advance(
         aupairFlowDefinition,

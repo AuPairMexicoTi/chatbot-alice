@@ -408,4 +408,77 @@ describe('ProcessInboundWhatsAppMessageUseCase', () => {
     );
     expect(openHandoff).toBeNull();
   });
+
+  it('notifica al asesor aunque falle el guardado de su contacto (recordAdvisorContact)', async () => {
+    // Antes, recordAdvisorContact estaba dentro del mismo try/catch que el
+    // handoff a APM: si fallaba (ej. caida momentanea de la BD) DESPUES de
+    // que APM ya habia asignado un asesor, el catch reiniciaba el flujo al
+    // menu principal -- pero handoffSucceeded ya habia quedado en true, asi
+    // que el asesor SI era notificado mas abajo. El candidato terminaba
+    // viendo la bienvenida otra vez mientras un asesor ya lo esperaba.
+    const store = new InMemoryStore();
+    const contactRepository = new InMemoryContactRepository(store);
+    const conversationRepository = new InMemoryConversationRepository(store);
+    const messageRepository = new InMemoryMessageRepository(store);
+    const aiRunRepository = new InMemoryAiRunRepository(store);
+    const handoffRepository = new InMemoryHandoffRepository(store);
+    const queue = new InMemoryQueueAdapter();
+    const handoffUseCase = new RequestHumanHandoffUseCase(
+      handoffRepository,
+      conversationRepository,
+    );
+    const apmHandoffPort = {
+      request: jest.fn().mockResolvedValue({
+        routing: 'NEW_ASSIGNMENT',
+        advisor: {
+          name: 'Asesor existente',
+          whatsappLink: 'https://wa.me/5215550000000',
+          imageUrl: 'https://crm.example/advisor.jpg',
+          isMailbox: false,
+        },
+        mailboxWhatsAppLink: 'https://wa.me/1234567890',
+      }),
+    };
+    const conversationFlowStateService = new ConversationFlowStateService();
+    jest
+      .spyOn(conversationFlowStateService, 'recordAdvisorContact')
+      .mockRejectedValue(new Error('DB temporalmente no disponible'));
+    const useCase = new ProcessInboundWhatsAppMessageUseCase(
+      contactRepository,
+      conversationRepository,
+      messageRepository,
+      new ResolveAutoReplyUseCase(new InMemoryAutoReplyRepository()),
+      new GenerateConversationReplyUseCase(
+        new MockAiGateway(),
+        aiRunRepository,
+        messageRepository,
+        [new RequestHumanHandoffTool(handoffUseCase)],
+      ),
+      new QueueOutboundMessageUseCase(queue),
+      conversationFlowStateService,
+      handoffUseCase,
+      apmHandoffPort,
+    );
+
+    for (const [externalId, text] of [
+      ['wamid.record-fail.1', 'Hola'],
+      ['wamid.record-fail.2', '5'],
+    ]) {
+      await useCase.execute(incomingMessage(externalId, text));
+    }
+
+    const handoffMessage = [...store.messages.values()].find(
+      (message) =>
+        message.direction === 'OUTBOUND' &&
+        message.text?.includes('Tu asesor asignado es'),
+    );
+    expect(handoffMessage).toBeDefined();
+    expect(handoffMessage?.text).not.toContain('bienvenida');
+
+    const [conversation] = [...store.conversations.values()];
+    const openHandoff = await handoffRepository.findOpenByConversationId(
+      conversation.id,
+    );
+    expect(openHandoff).not.toBeNull();
+  });
 });

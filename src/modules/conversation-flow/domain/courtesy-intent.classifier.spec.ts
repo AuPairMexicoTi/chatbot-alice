@@ -45,8 +45,10 @@ describe('classifyCourtesyIntent', () => {
     // pregunta y Alice contestaba "¡Con gusto!" en vez de tratarlas como lo
     // que son.
     'no está bien',
+    'perfecto pero tengo una duda del pago',
     'ok y cuánto cuesta',
     'gracias, ¿cuándo es la entrevista?',
+    'no ok',
     'no, gracias',
   ])('does not classify "%s" as a courtesy intent', (text) => {
     expect(classifyCourtesyIntent(text)).toBeNull();

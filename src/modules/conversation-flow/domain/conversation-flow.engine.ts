@@ -82,7 +82,7 @@ export class ConversationFlowEngine {
     input: FlowInput,
   ): FlowResult {
     if (state.status === 'AWAITING_HUMAN')
-      return this.advanceWhileAwaitingAdvisor(state, input);
+      return this.advanceWhileAwaitingAdvisor(definition, state, input);
     if (state.status !== 'ACTIVE')
       return { state, messages: [], requestHandoff: false };
     if (input.messageType !== 'TEXT' || !input.text) {
@@ -146,16 +146,31 @@ export class ConversationFlowEngine {
   }
 
   // La candidata ya tiene un asesor asignado (status AWAITING_HUMAN) -- no
-  // se vuelve a mostrar el menu principal (ver conversation-flow-state.service.ts,
-  // shouldRestart). Cortesia/confirmacion se responde corto; cualquier otra
-  // cosa recibe el mensaje de espera, con un limite anti-bucle de 2
-  // fallbacks seguidos antes de quedarse en silencio.
+  // se vuelve a mostrar el menu principal solo por escribir algo (ver
+  // conversation-flow-state.service.ts, shouldRestart, que ademas reinicia
+  // esto tras un tiempo largo de inactividad). "menu"/"inicio" si fuerza un
+  // reinicio inmediato -- una candidata que ya no quiere esperar al asesor
+  // (lo descartaron, se enfrio, quiere otro programa) no deberia tener que
+  // aguantar el limite de 2 fallbacks ni el reinicio por inactividad para
+  // volver a ver las opciones. Cortesia/confirmacion se responde corto;
+  // cualquier otra cosa recibe el mensaje de espera, con un limite
+  // anti-bucle de 2 fallbacks seguidos antes de quedarse en silencio.
   private advanceWhileAwaitingAdvisor(
+    definition: FlowDefinition,
     state: FlowState,
     input: FlowInput,
   ): FlowResult {
     if (input.messageType !== 'TEXT' || !input.text)
       return { state, messages: [], requestHandoff: false };
+
+    const normalized = normalize(input.text);
+    if (['menu', 'inicio'].includes(normalized))
+      return this.enter(definition, {
+        nodeId: definition.entryNodeId,
+        status: 'ACTIVE',
+        attempts: 0,
+        variables: {},
+      });
 
     const intent = classifyCourtesyIntent(input.text);
     if (intent === 'THANKS')
