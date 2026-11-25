@@ -40,6 +40,14 @@ describe('classifyCourtesyIntent', () => {
     'mi nombre es Ana López',
     '',
     '   ',
+    // Casos reales reportados tras el despliegue anterior: una frase de
+    // cortesia (esta bien/ok/gracias) aparecia dentro de una queja o una
+    // pregunta y Alice contestaba "¡Con gusto!" en vez de tratarlas como lo
+    // que son.
+    'no está bien',
+    'ok y cuánto cuesta',
+    'gracias, ¿cuándo es la entrevista?',
+    'no, gracias',
   ])('does not classify "%s" as a courtesy intent', (text) => {
     expect(classifyCourtesyIntent(text)).toBeNull();
   });

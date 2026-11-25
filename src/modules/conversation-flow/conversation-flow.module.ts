@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from '@shared/infrastructure/database/prisma/prisma.service';
 import {
+  CONVERSATION_FLOW_AWAITING_HUMAN_RESET_MS,
   CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS,
   CONVERSATION_FLOW_NOW,
   ConversationFlowStateService,
@@ -34,6 +35,16 @@ import { UpdateFlowNodeUseCase } from './application/use-cases/update-flow-node.
     {
       provide: CONVERSATION_FLOW_NOW,
       useValue: () => new Date(),
+    },
+    {
+      provide: CONVERSATION_FLOW_AWAITING_HUMAN_RESET_MS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        config.getOrThrow<number>('conversationFlow.awaitingHumanResetDays') *
+        24 *
+        60 *
+        60 *
+        1000,
     },
     {
       provide: CONVERSATION_FLOW_STATE_REPOSITORY,

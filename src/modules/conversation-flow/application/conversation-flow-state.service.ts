@@ -34,8 +34,20 @@ export const CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS = Symbol(
   'CONVERSATION_FLOW_INACTIVITY_TIMEOUT_MS',
 );
 export const CONVERSATION_FLOW_NOW = Symbol('CONVERSATION_FLOW_NOW');
+export const CONVERSATION_FLOW_AWAITING_HUMAN_RESET_MS = Symbol(
+  'CONVERSATION_FLOW_AWAITING_HUMAN_RESET_MS',
+);
 
 const defaultInactivityTimeoutMs = 30 * 60 * 1000;
+// AWAITING_HUMAN ("Esperando asesor") no debe reiniciarse por el timeout
+// corto de ACTIVE (pensado para una sesion de menu, no para la espera de un
+// asesor) pero tampoco debe quedarse asi para siempre: una candidata que
+// vuelve semanas o meses despues ya no deberia seguir atrapada en los
+// recordatorios de advanceWhileAwaitingAdvisor (ver
+// ConversationFlowEngine), que ademas se queda en silencio total despues
+// del segundo recordatorio (fallbackStreak >= 3). Pasado este plazo sin
+// actividad se trata como abandonada y vuelve al menu principal.
+const defaultAwaitingHumanResetMs = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class ConversationFlowStateService {
@@ -47,6 +59,8 @@ export class ConversationFlowStateService {
     private readonly inactivityTimeoutMs: number = defaultInactivityTimeoutMs,
     @Inject(CONVERSATION_FLOW_NOW)
     private readonly now: () => Date = () => new Date(),
+    @Inject(CONVERSATION_FLOW_AWAITING_HUMAN_RESET_MS)
+    private readonly awaitingHumanResetMs: number = defaultAwaitingHumanResetMs,
     @Inject(FLOW_DEFINITION_REPOSITORY)
     private readonly flowDefinitionRepository: FlowDefinitionRepository = staticFlowDefinitionRepository,
   ) {}
@@ -59,18 +73,24 @@ export class ConversationFlowStateService {
     // ACTIVE parada en un nodo borrado haria crashear advance() al buscarlo.
     // Se trata igual que cualquier otra razon para reiniciar al menu.
     //
-    // AWAITING_HUMAN (= "Esperando asesor") NO reinicia: antes, cualquier
-    // mensaje de una candidata ya transferida volvia a mostrar el menu
-    // principal como si no tuviera asesor asignado (bug real en produccion
-    // -- ver ConversationFlowEngine.advanceWhileAwaitingAdvisor). Solo CLOSED
-    // (cierre explicito o por inactividad) debe reiniciar al menu.
+    // AWAITING_HUMAN (= "Esperando asesor") no reinicia con el timeout corto
+    // de ACTIVE: antes, cualquier mensaje de una candidata ya transferida
+    // volvia a mostrar el menu principal como si no tuviera asesor asignado
+    // (bug real en produccion -- ver
+    // ConversationFlowEngine.advanceWhileAwaitingAdvisor). Pero tampoco debe
+    // quedarse asi para siempre -- pasado awaitingHumanResetMs (dias, no
+    // minutos) sin que la candidata escriba, se trata como abandonada y
+    // vuelve al menu principal igual que CLOSED.
     const shouldRestart =
       !record ||
       record.state.status === 'CLOSED' ||
       !definition.nodes[record.state.nodeId] ||
       (record.state.status === 'ACTIVE' &&
         this.now().getTime() - record.updatedAt.getTime() >=
-          this.inactivityTimeoutMs);
+          this.inactivityTimeoutMs) ||
+      (record.state.status === 'AWAITING_HUMAN' &&
+        this.now().getTime() - record.updatedAt.getTime() >=
+          this.awaitingHumanResetMs);
     // La bienvenida de CRM se envía antes del primer mensaje entrante. Al
     // recibirlo, ya evaluamos su respuesta contra el menú en vez de reenviar
     // toda la bienvenida; un saludo explícito continúa mostrando el menú.

@@ -83,6 +83,41 @@ const THANKS_PHRASES = [
   'buenisima',
 ];
 
+// "no esta bien", "ok y cuanto cuesta" o "gracias, cuando es la entrevista"
+// contienen una palabra de THANKS_PHRASES (esta bien/ok/gracias) pero no son
+// cortesia -- son una queja, una pregunta de precio y una pregunta con
+// agradecimiento de cortesia incidental. matchesAnyPhrase por si sola no
+// distingue esto porque busca la frase en cualquier parte del mensaje. Por
+// eso una frase de THANKS (a diferencia de CONFIRMATION, mas larga y
+// especifica, y que no presenta este problema en los casos reportados) solo
+// cuenta si, ademas: el mensaje no es una pregunta, no incluye una negacion,
+// y no le queda contenido real despues de quitarle todas las frases de
+// cortesia que reconoce (ver isPureThanksMessage).
+const QUESTION_MARK_PATTERN = /[?¿]/u;
+const NEGATION_PATTERN = /\bno\b/u;
+
+const stripPhrases = (normalized: string, phrases: string[]): string => {
+  // Mas largas primero: "gracias" es tambien el inicio de "muchas gracias"
+  // -- quitarla primero deja "muchas" huerfano y sin la frase larga que lo
+  // cubria ("perfecto muchas gracias" -> "perfecto muchas ", ya sin "muchas
+  // gracias" que emparejar).
+  const longestFirst = [...phrases].sort((a, b) => b.length - a.length);
+  let result = normalized;
+  for (const phrase of longestFirst) {
+    result = result.replace(
+      new RegExp(`\\b${escapeRegExp(phrase)}\\b`, 'gu'),
+      ' ',
+    );
+  }
+  return result.replace(/\s+/g, ' ').trim();
+};
+
+const isPureThanksMessage = (raw: string, normalized: string): boolean => {
+  if (QUESTION_MARK_PATTERN.test(raw)) return false;
+  if (NEGATION_PATTERN.test(normalized)) return false;
+  return stripPhrases(normalized, THANKS_PHRASES) === '';
+};
+
 export type CourtesyIntent = 'THANKS' | 'CONFIRMATION' | null;
 
 export function classifyCourtesyIntent(text: string): CourtesyIntent {
@@ -92,6 +127,10 @@ export function classifyCourtesyIntent(text: string): CourtesyIntent {
   if (!normalized) return null;
 
   if (matchesAnyPhrase(normalized, CONFIRMATION_PHRASES)) return 'CONFIRMATION';
-  if (matchesAnyPhrase(normalized, THANKS_PHRASES)) return 'THANKS';
+  if (
+    matchesAnyPhrase(normalized, THANKS_PHRASES) &&
+    isPureThanksMessage(text, normalized)
+  )
+    return 'THANKS';
   return null;
 }
