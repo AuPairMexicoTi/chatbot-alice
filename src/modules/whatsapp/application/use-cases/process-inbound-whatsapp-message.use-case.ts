@@ -121,6 +121,30 @@ export class ProcessInboundWhatsAppMessageUseCase {
             conversation.id,
           );
         }
+
+        // Try/catch separado del anterior a proposito: aqui el handoff a
+        // APM ya tuvo exito y el asesor ya fue asignado, asi que un fallo
+        // al guardar su liga de WhatsApp (ej. caida momentanea de la BD) no
+        // debe reiniciar el flujo al menu -- eso dejaria a la conversacion
+        // en ACTIVE con el asesor ya notificado mas abajo (handoffSucceeded),
+        // una contradiccion peor que simplemente no tener el link a mano en
+        // el primer fallback (ver ConversationFlowEngine.waitingForAdvisorMessage).
+        if (handoffSucceeded && handoffResult) {
+          try {
+            flowResult.state =
+              await this.conversationFlowStateService.recordAdvisorContact(
+                conversation.id,
+                flowResult.state,
+                handoffResult.advisor,
+              );
+          } catch (error) {
+            this.logger.error({
+              err: error,
+              conversationId: conversation.id,
+              msg: 'No se pudo guardar el contacto del asesor',
+            });
+          }
+        }
       }
       if (handoffSucceeded) {
         await this.requestHumanHandoffUseCase?.execute(

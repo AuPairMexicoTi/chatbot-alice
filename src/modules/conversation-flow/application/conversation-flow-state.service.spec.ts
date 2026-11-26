@@ -77,7 +77,11 @@ describe('ConversationFlowStateService', () => {
     expect(result.messages[0]).not.toContain('bienvenida');
   });
 
-  it('restarts a finished flow when the candidate sends another message', async () => {
+  it('does not restart to the main menu while awaiting a human advisor', async () => {
+    // Bug real en produccion: una candidata ya transferida a un asesor
+    // (AWAITING_HUMAN = "Esperando asesor") escribia cualquier cosa y Alice
+    // reiniciaba al menu principal como si no tuviera asesor asignado. Ver
+    // ConversationFlowEngine.advanceWhileAwaitingAdvisor.
     const repository = repositoryWith({
       state: {
         nodeId: 'human-handoff',
@@ -95,9 +99,64 @@ describe('ConversationFlowStateService', () => {
 
     const result = await service.advance('conversation-1', textInput);
 
+    expect(result.state.nodeId).toBe('human-handoff');
+    expect(result.state.status).toBe('AWAITING_HUMAN');
+    expect(result.messages[0]).not.toContain('bienvenida');
+    expect(result.messages[0]).not.toContain('No entendí');
+  });
+
+  it('restarts an AWAITING_HUMAN conversation abandoned for 7+ days', async () => {
+    // Bug real en produccion: AWAITING_HUMAN nunca se reiniciaba, asi que
+    // una candidata que regresaba semanas o meses despues se quedaba
+    // atrapada en los recordatorios de advanceWhileAwaitingAdvisor (que
+    // ademas enmudecen por completo tras el segundo recordatorio). Ver
+    // ConversationFlowStateService.shouldRestart.
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const repository = repositoryWith({
+      state: {
+        nodeId: 'human-handoff',
+        status: 'AWAITING_HUMAN',
+        attempts: 0,
+        variables: { fallbackStreak: '3', needsReview: 'true' },
+      },
+      updatedAt: new Date(now.getTime() - sevenDaysMs),
+    });
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+      sevenDaysMs,
+    );
+
+    const result = await service.advance('conversation-1', textInput);
+
     expect(result.state.nodeId).toBe('main-menu');
     expect(result.state.status).toBe('ACTIVE');
     expect(result.messages[0]).toContain('bienvenida');
+  });
+
+  it('keeps waiting for a human advisor before the reset threshold', async () => {
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const repository = repositoryWith({
+      state: {
+        nodeId: 'human-handoff',
+        status: 'AWAITING_HUMAN',
+        attempts: 0,
+        variables: {},
+      },
+      updatedAt: new Date(now.getTime() - sevenDaysMs + 1),
+    });
+    const service = new ConversationFlowStateService(
+      repository,
+      30 * 60 * 1000,
+      () => now,
+      sevenDaysMs,
+    );
+
+    const result = await service.advance('conversation-1', textInput);
+
+    expect(result.state.nodeId).toBe('human-handoff');
+    expect(result.state.status).toBe('AWAITING_HUMAN');
   });
 
   it('restarts when the stored node id no longer exists in the definition', async () => {
